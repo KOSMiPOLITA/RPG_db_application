@@ -3,6 +3,7 @@ from appJar import gui
 from PIL import Image, ImageTk
 import datetime
 
+
 class window():
 
     def __init__(self):
@@ -10,6 +11,7 @@ class window():
         self.lista = []
         self.canLoad = 1
         self.createdInt = 1
+        self.createdInt3 = 1
         self.tabOfAb = 1
         self.createdPostacie = 1
         self.createdRace = 1
@@ -17,6 +19,9 @@ class window():
         self.createdKraj = 1
         self.lista_class = ["---------"]
         self.lista_races = ["---------"]
+        self.lista_jezykow = ["---------"]
+        self.lista_efektow = ["--------------------"]
+        self.EfektAndJezyk = 1
         self.lista_sex = ["N", "F", "M"]
         self.lista_stat = []
         self.postacie_index = []
@@ -26,13 +31,12 @@ class window():
         self.lista_tab = ["Karty Postaci", "Klasy & Umiejętności", "Rasy & Pochodzenie", "Zarządzanie danymi"]
         for t in range(len(self.lista_tab)):
             tmp = ""
-            n = len(max(self.lista_tab))-len(self.lista_tab[t])
-            while(n > 0):
+            n = len(max(self.lista_tab)) - len(self.lista_tab[t])
+            while (n > 0):
                 tmp += " "
                 n -= 1
             self.lista_tab[t] = self.lista_tab[t] + tmp
         self.lista_postaci = ["---------"]
-
 
     def createDB(self):
         if self.database is not None and self.createdInt == 1:
@@ -43,7 +47,7 @@ class window():
             for obiekt in self.lista:
                 app.label(obiekt)
             self.createdInt = 0
-
+            self.createdInt3 = 0
 
     def login(self, btn):
         if btn == 'LOGIN':
@@ -66,11 +70,11 @@ class window():
     def sendCharacter(self):
         nazwa = app.getEntry("Nazwa")
         levela = app.getOptionBox("Level Postaci")
-        plec  = app.getOptionBox("Płeć")
-        rasa  = app.getEntry("Rasa")
+        plec = app.getOptionBox("Płeć")
+        rasa = app.getEntry("Rasa")
         pochodzenia = app.getEntry("Pochodzenie")
-        klasa  = app.getOptionBox("Klasa")
-        wiek  = app.getEntry("Wiek")
+        klasa = app.getOptionBox("Klasa")
+        wiek = app.getEntry("Wiek")
         wzrost = app.getEntry("Wzrost")
         waga = app.getEntry("Waga")
         skora = app.getEntry("Kolor skóry")
@@ -84,8 +88,9 @@ class window():
         inte = app.getOptionBox("INT")
         wis = app.getOptionBox("WIS")
         cha = app.getOptionBox("CHA")
-        self.database.cursor().execute(f"insert into Postacie values (POSTACIE_SEQ.NEXTVAL,'{nazwa}', {levela}, {wiek}, {wzrost}, {waga}, '{plec}', '{skora}',"
-                                       f"'{wlosy}', '{oczy}', {hp}, {sta}, {strg}, {dex}, {con}, {inte}, {wis}, {cha}, '{rasa}', '{pochodzenia}', '{klasa}')")
+        self.database.cursor().execute(
+            f"insert into Postacie values (POSTACIE_SEQ.NEXTVAL,'{nazwa}', {levela}, {wiek}, {wzrost}, {waga}, '{plec}', '{skora}',"
+            f"'{wlosy}', '{oczy}', {hp}, {sta}, {strg}, {dex}, {con}, {inte}, {wis}, {cha}, '{rasa}', '{pochodzenia}', '{klasa}')")
         self.database.cursor().execute("commit")
         app.infoBox("Nowa Postać   ", "Nastąpiło poprawne dodanie postaci do bazy danych", parent=None)
         self.lista_postaci.append(nazwa)
@@ -95,18 +100,18 @@ class window():
         pass
 
     def makeLogin(self):
-        with app.subWindow('Logowanie', modal = True):
+        with app.subWindow('Logowanie', modal=True):
             app.setResizable(canResize=False)
             app.showSubWindow("Logowanie")
             app.setBg("indianred")
-            #duma = app.addImage("dragon", "login.gif")
-            #app.setBgImage(duma)
-            #photo = ImageTk.PhotoImage(Image.open("login.gif"))
-            app.setSize(400,200)
+            # duma = app.addImage("dragon", "login.gif")
+            # app.setBgImage(duma)
+            # photo = ImageTk.PhotoImage(Image.open("login.gif"))
+            app.setSize(400, 200)
             app.setSticky("new")
             app.addImage("smog", "goraLogin.gif")
 
-            app.setPadding([20,5])
+            app.setPadding([20, 5])
             app.addLabelEntry("Username")
             app.addLabelSecretEntry("Password ")
 
@@ -123,6 +128,7 @@ class window():
         self.database = None
         self.lista = []
         self.createdInt = 1
+        self.createdInt3 = 1
         self.lista_class = ["---------"]
         self.createdPostacie = 1
         self.lista_postaci = ["---------"]
@@ -130,12 +136,17 @@ class window():
         self.canLoad = 1
         self.lista_krajow = ["---------"]
         self.createdKraj = 1
+        self.lista_jezykow = ["---------"]
+        self.lista_efektow = ["--------------------"]
+        self.EfektAndJezyk = 1
         app.openTab("Start", self.lista_tab[1])
         app.changeOptionBox("Wybierz klasę", self.lista_class, 0, 0)
         app.changeOptionBox("Klasa", self.lista_class, 0, 0)
         app.changeOptionBox("Klasa :", self.lista_class, 0, 0)
         app.changeOptionBox("Rasa :", self.lista_races, 0, 0)
         app.changeOptionBox("Pochodzenie :", self.lista_krajow, 0, 0)
+        app.changeOptionBox("Nazwa języka :", self.lista_jezykow)
+        app.changeOptionBox("Efekt rasy :", self.lista_efektow)
         app.stopTab()
         app.infoBox("Wylogowywanie", "Nastąpiło poprawne wylogowanie z Bazy Danych", parent=None)
 
@@ -150,12 +161,27 @@ class window():
                 self.postacie_index.append([row[0], row[1]])
             app.changeOptionBox("Lista postaci : ", self.lista_postaci)
 
+    def createTableOfEfektAndJezyk(self):
+        if self.database is not None and self.EfektAndJezyk == 1:
+            self.lista_jezykow = []
+            self.lista_efektow = []
+            self.EfektAndJezyk = 0
+            efektDB = self.database.cursor().execute('select * from efekty_rasowe')
+            jezykDB = self.database.cursor().execute('select * from jezyki')
+            for row in efektDB:
+                self.lista_efektow.append(row[0])
+            for row in jezykDB:
+                self.lista_jezykow.append(row[0])
+            app.changeOptionBox("Nazwa języka :", self.lista_jezykow)
+            app.changeOptionBox("Efekt rasy :", self.lista_efektow)
+
     def createTableOfNations(self):
         if self.database is not None and self.createdKraj == 1:
             self.lista_krajow = []
             self.createdKraj = 0
             kreajeLista = []
-            kreajeDBNaglowek = self.database.cursor().execute("select column_name from user_tab_cols where table_name = 'KRAJE_POCHODZENIA'")
+            kreajeDBNaglowek = self.database.cursor().execute(
+                "select column_name from user_tab_cols where table_name = 'KRAJE_POCHODZENIA'")
             kreajeDB = self.database.cursor().execute('select * from kraje_pochodzenia')
             '''tmp = []
             for row in kreajeDBNaglowek:
@@ -163,11 +189,11 @@ class window():
                 tmp.append(row)
             kreajeLista.append(tmp)'''
             for row in kreajeDB:
-                #tmp = []
+                # tmp = []
                 self.lista_krajow.append(row[0])
-                #for item in row:
+                # for item in row:
                 #    tmp.append(item)
-                #kreajeLista.append(tmp)
+                # kreajeLista.append(tmp)
             app.changeOptionBox("Pochodzenie :", self.lista_krajow)
 
     def createTableOfRaces(self):
@@ -175,7 +201,8 @@ class window():
             self.lista_races = []
             self.createdRace = 0
             rasyLista = []
-            rasyDBNaglowek = self.database.cursor().execute("select column_name from user_tab_cols where table_name = 'RASY'")
+            rasyDBNaglowek = self.database.cursor().execute(
+                "select column_name from user_tab_cols where table_name = 'RASY'")
             rasyDB = self.database.cursor().execute('select * from rasy')
             '''tmp = []
             for row in rasyDBNaglowek:
@@ -183,19 +210,76 @@ class window():
                 tmp.append(row)
             rasyLista.append(tmp)'''
             for row in rasyDB:
-                #tmp = []
+                # tmp = []
                 self.lista_races.append(row[0])
-                #for item in row:
+                # for item in row:
                 #    tmp.append(item)
-                #rasyLista.append(tmp)
+                # rasyLista.append(tmp)
             app.changeOptionBox("Rasa :", self.lista_races)
+
+    def createTableOfPochodzenie(self):
+        if self.database is not None and self.createdInt3 == 1:
+            self.createdInt3 = 0
+            klasyLista = []
+            klasyDBNaglowek = self.database.cursor().execute(
+                "select column_name from user_tab_cols where table_name = 'KRAJE_POCHODZENIA'")
+            klasyDB = self.database.cursor().execute('select * from kraje_pochodzenia')
+            tmp = []
+            for row in klasyDBNaglowek:
+                row = str(row).replace("('", "").replace("',)", "")
+                tmp.append(row)
+            klasyLista.append(tmp)
+            for row in klasyDB:
+                tmp = []
+                for item in row:
+                    tmp.append(item)
+                klasyLista.append(tmp)
+
+            app.openTab("Start", self.lista_tab[3])
+            app.setStretch('column')
+            app.setSticky('wen')
+            app.addLabel('postac', '', 2, 0)
+            app.setLabelBg("postac", "indianred")
+            app.addLabel('postaca', '', 2, 1)
+            app.setLabelBg("postaca", "indianred")
+            app.addLabel('postacb', '', 2, 2)
+            app.setLabelBg("postacb", "indianred")
+            app.setSticky("news")
+            app.setPadding([20, 20])
+            app.addTable("tabela_pochodzeń", klasyLista, wrap="700", row=5)
+
+            klasyLista = []
+            klasyDBNaglowek = self.database.cursor().execute(
+                "select column_name from user_tab_cols where table_name = 'RASY'")
+            klasyDB = self.database.cursor().execute("select * from rasy r inner join efekty_rasowe e on r.nazwa_efektu = e.nazwa_efektu")
+
+            tmp = []
+            for row in klasyDBNaglowek:
+                row = str(row).replace("('", "").replace("',)", "")
+                tmp.append(row)
+            klasyDBNaglowek = self.database.cursor().execute(
+                "select column_name from user_tab_cols where table_name = 'EFEKTY_RASOWE'")
+            for row in klasyDBNaglowek:
+                row = str(row).replace("('", "").replace("',)", "")
+                tmp.append(row)
+            klasyLista.append(tmp)
+            for row in klasyDB:
+                tmp = []
+                for item in row:
+                    tmp.append(item)
+                klasyLista.append(tmp)
+            app.setSticky("new")
+            app.addTable("tabela_pochodzeń1", klasyLista, wrap="500", colspan=3, row=3)
+
+            app.stopTab()
 
     def createTableOfClass(self):
         if self.database is not None and self.createdInt == 1:
             self.lista_class = []
             self.createdInt = 0
             klasyLista = []
-            klasyDBNaglowek = self.database.cursor().execute("select column_name from user_tab_cols where table_name = 'KLASY'")
+            klasyDBNaglowek = self.database.cursor().execute(
+                "select column_name from user_tab_cols where table_name = 'KLASY'")
             klasyDB = self.database.cursor().execute('select * from klasy')
             tmp = []
             for row in klasyDBNaglowek:
@@ -212,7 +296,7 @@ class window():
             app.changeOptionBox("Klasa :", self.lista_class, 1, 0)
             app.stopTab()
             app.openTab("Start", self.lista_tab[1])
-            app.changeOptionBox("Wybierz klasę", self.lista_class , 1 , 0)
+            app.changeOptionBox("Wybierz klasę", self.lista_class, 1, 0)
             app.setStretch("both")
             app.setSticky("news")
             app.setPadding([20, 20])
@@ -256,7 +340,6 @@ class window():
             app.setOptionBox("WIS :", postacDB[16])
             app.setOptionBox("CHA :", postacDB[17])
 
-
     def editCharachterData(self):
         postac = app.getOptionBox("Lista postaci : ")
         nazwa = app.getEntry("Nazwa :")
@@ -299,8 +382,10 @@ class window():
             klasa = app.getOptionBox("Wybierz klasę")
             self.createdInt2 = 0;
             umiejLista = []
-            umiejDBNaglowek = self.database.cursor().execute("select column_name from user_tab_cols where table_name = 'UMIEJETNOSCI'")
-            query = (f"select nazwa, opis_umiejetnosci, poziom, dmg, heal, def, p_d, nazwa_dodatku from Umiejetnosci u inner join UmiejetnosciDlaKlas uk on uk.umiejetnosc = u.nazwa where uk.klasa = '{klasa}'")
+            umiejDBNaglowek = self.database.cursor().execute(
+                "select column_name from user_tab_cols where table_name = 'UMIEJETNOSCI'")
+            query = (
+                f"select nazwa, opis_umiejetnosci, poziom, dmg, heal, def, p_d, nazwa_dodatku from Umiejetnosci u inner join UmiejetnosciDlaKlas uk on uk.umiejetnosc = u.nazwa where uk.klasa = '{klasa}'")
             umiejDB = self.database.cursor().execute(query)
             tmp = []
             for row in umiejDBNaglowek:
@@ -328,65 +413,63 @@ class window():
                 app.addTable(f"tabela_umiejetnosci_dla_klas{self.tabOfAb}", umiejLista, wrap="500")
 
     def createNewCharacterWindow(self):
-            with app.subWindow("Dodaj nową postać", modal = True):
-                app.showSubWindow("Dodaj nową postać")
-                app.setResizable(canResize=False)
-                app.setSize(1280, 720)
-                app.setBg(colour="beige", override=False)
-                app.setStretch("column")
-                app.setSticky("new")
-                app.addImage("smokPostac", "dnd2.gif", 0, colspan=4)
+        with app.subWindow("Dodaj nową postać", modal=True):
+            app.showSubWindow("Dodaj nową postać")
+            app.setResizable(canResize=False)
+            app.setSize(1280, 720)
+            app.setBg(colour="beige", override=False)
+            app.setStretch("column")
+            app.setSticky("new")
+            app.addImage("smokPostac", "dnd2.gif", 0, colspan=4)
 
-                app.setPadding([20, 0])
-                app.setStretch("column")
-                app.setSticky("w")
-                app.addLabel("KartaPos", "Karta Postaci", 1, 0)
-                app.addButtons(["Zatwierdź postać"], win.sendCharacter, 1, 1)
+            app.setPadding([20, 0])
+            app.setStretch("column")
+            app.setSticky("w")
+            app.addLabel("KartaPos", "Karta Postaci", 1, 0)
+            app.addButtons(["Zatwierdź postać"], win.sendCharacter, 1, 1)
 
-                app.setSticky("w")
-                app.addLabelEntry("Nazwa", 2, 0)
-                app.addLabelOptionBox("Level Postaci", win.lista_stat, 2, 1)
-                app.addLabelOptionBox("Płeć", win.lista_sex, 2, 2)
+            app.setSticky("w")
+            app.addLabelEntry("Nazwa", 2, 0)
+            app.addLabelOptionBox("Level Postaci", win.lista_stat, 2, 1)
+            app.addLabelOptionBox("Płeć", win.lista_sex, 2, 2)
 
-                app.addLabelOptionBox("Rasa", win.lista_races, 3, 0)
-                app.addLabelOptionBox("Pochodzenie", win.lista_krajow, 3, 1)
-                app.addLabelOptionBox("Klasa", win.lista_class, 3, 2)
+            app.addLabelOptionBox("Rasa", win.lista_races, 3, 0)
+            app.addLabelOptionBox("Pochodzenie", win.lista_krajow, 3, 1)
+            app.addLabelOptionBox("Klasa", win.lista_class, 3, 2)
 
-                app.addLabelEntry("Wiek", 4, 0)
-                app.addLabelEntry("Wzrost", 4, 1)
-                app.addLabelEntry("Waga", 4, 2)
+            app.addLabelEntry("Wiek", 4, 0)
+            app.addLabelEntry("Wzrost", 4, 1)
+            app.addLabelEntry("Waga", 4, 2)
 
-                app.addLabelEntry("Kolor skóry", 5, 0)
-                app.addLabelEntry("Kolor włosów", 5, 1)
-                app.addLabelEntry("Kolor oczów", 5, 2)
+            app.addLabelEntry("Kolor skóry", 5, 0)
+            app.addLabelEntry("Kolor włosów", 5, 1)
+            app.addLabelEntry("Kolor oczów", 5, 2)
 
-                app.setSticky("e")
-                app.addLabelEntry("HP", 6, 0)
-                app.setSticky("w")
-                app.addLabelEntry("STA", 6, 1)
-                app.setSticky("w")
-                # app.addLabelEntry("Plik z avatarem", 7, 1, colspan=2)
+            app.setSticky("e")
+            app.addLabelEntry("HP", 6, 0)
+            app.setSticky("w")
+            app.addLabelEntry("STA", 6, 1)
+            app.setSticky("w")
+            # app.addLabelEntry("Plik z avatarem", 7, 1, colspan=2)
 
-                app.setSticky("e")
-                app.addLabelOptionBox("STR", win.lista_stat, 7, 0)
-                app.addLabelOptionBox("DEX", win.lista_stat, 7, 1)
-                app.addLabelOptionBox("CON", win.lista_stat, 8, 0)
-                app.addLabelOptionBox("INT", win.lista_stat, 8, 1)
-                app.addLabelOptionBox("WIS", win.lista_stat, 9, 0)
-                app.addLabelOptionBox("CHA", win.lista_stat, 9, 1)
+            app.setSticky("e")
+            app.addLabelOptionBox("STR", win.lista_stat, 7, 0)
+            app.addLabelOptionBox("DEX", win.lista_stat, 7, 1)
+            app.addLabelOptionBox("CON", win.lista_stat, 8, 0)
+            app.addLabelOptionBox("INT", win.lista_stat, 8, 1)
+            app.addLabelOptionBox("WIS", win.lista_stat, 9, 0)
+            app.addLabelOptionBox("CHA", win.lista_stat, 9, 1)
 
-                app.setPadding([0, 0])
-                app.setSticky("nwes")
-                app.addImage("krol", "krol.gif", 1, 3, rowspan=50)
-                # app.addImage("avatar", "avatar.gif", 8, 1)
+            app.setPadding([0, 0])
+            app.setSticky("nwes")
+            app.addImage("krol", "krol.gif", 1, 3, rowspan=50)
+            # app.addImage("avatar", "avatar.gif", 8, 1)
 
-                # app.setImageSize("avatar", width=300, height=300)
-                # app.setImage("avatar", "avatar.gif")
+            # app.setImageSize("avatar", width=300, height=300)
+            # app.setImage("avatar", "avatar.gif")
 
 
-
-if __name__ == "__main__" :
-
+if __name__ == "__main__":
     win = window()
     with gui('Baza Danych RPG') as app:
         app.setResizable(canResize=True)
@@ -409,7 +492,6 @@ if __name__ == "__main__" :
         app.addButtons(["Edytuj Postać"], win.loadCharacterData, 2, 0)
         app.addButtons(["Nowa Postać   "], win.createNewCharacterWindow, 2, 1)
 
-        
         app.setStretch("column")
         app.setSticky("w")
         app.addLabel("KartaPos_g", "Karta Postaci", 3, 0)
@@ -437,7 +519,7 @@ if __name__ == "__main__" :
         app.setSticky("w")
         app.addLabelEntry("STA :", 8, 1)
         app.setSticky("w")
-        #app.addLabelEntry("Plik z avatarem", 7, 1, colspan=2)
+        # app.addLabelEntry("Plik z avatarem", 7, 1, colspan=2)
 
         app.setSticky("e")
         app.addLabelOptionBox("STR :", win.lista_stat, 9, 0)
@@ -449,20 +531,19 @@ if __name__ == "__main__" :
         app.setSticky("we")
         app.addButtons(['Zmień dane'], win.editCharachterData, 11, 2)
 
-        app.setPadding([0,0])
+        app.setPadding([0, 0])
         app.setSticky("nes")
         app.addImage("krolGlowny", "krol.gif", 1, 3, rowspan=50)
         app.registerEvent(win.createTableOfCharacters)
         app.registerEvent(win.createTableOfRaces)
         app.registerEvent(win.createTableOfNations)
-        #app.addImage("avatar", "avatar.gif", 8, 1)
+        # app.addImage("avatar", "avatar.gif", 8, 1)
 
-        #app.setImageSize("avatar", width=300, height=300)
-        #app.setImage("avatar", "avatar.gif")
+        # app.setImageSize("avatar", width=300, height=300)
+        # app.setImage("avatar", "avatar.gif")
 
         app.setBg(colour="beige", override=False)
         app.stopTab()
-
 
         app.startTab(win.lista_tab[1])
         app.setStretch("column")
@@ -474,19 +555,18 @@ if __name__ == "__main__" :
         app.addLabel('bottom3', '', 1, colspan=2)
         app.setLabelBg("bottom3", "darkred")
 
-
         app.setStretch('column')
         app.setSticky('wen')
-        app.setPadding([20, 0])
+        app.setPadding([20, 20])
 
-        app.addLabelOptionBox("Wybierz klasę", win.lista_class , 2 , 0)
+        app.addLabelOptionBox("Wybierz klasę", win.lista_class, 2, 0)
         app.addButtons(["Wyświetl umiejętności klasy"], win.createTableOfAbilities, 2, 1)
 
         app.registerEvent(win.createTableOfClass)
-        #app.addLabel("loop", "New Row", app.getRow(), 0)
-        #app.addButtons(["Show Classes"], win.createTableOfClass)
+        app.registerEvent(win.createTableOfPochodzenie)
+        # app.addLabel("loop", "New Row", app.getRow(), 0)
+        # app.addButtons(["Show Classes"], win.createTableOfClass)
         app.stopTab()
-
 
         app.startTab(win.lista_tab[2])
         app.setStretch("column")
@@ -506,11 +586,11 @@ if __name__ == "__main__" :
         app.setSticky("w")
         app.addLabelEntry("Długość życia:", 8, 0)
         app.addLabelOptionBox("Pod / Dod :", win.pod_dod, 9, 0)
-        app.addLabelOptionBox("Efekt rasy :", win.pod_dod, 10, 0)
-        app.addLabelOptionBox("Nazwa języka :", win.pod_dod, 11, 0)
+        app.addLabelOptionBox("Efekt rasy :", win.lista_efektow, 10, 0)
+        app.addLabelOptionBox("Nazwa języka :", win.lista_jezykow, 11, 0)
         app.addButtons(['Dodaj rasę'], win.doNothing, 11, 1)
+        app.registerEvent(win.createTableOfEfektAndJezyk)
         app.stopTab()
-
 
         app.startTab(win.lista_tab[3])
         app.setStretch("column")
@@ -522,24 +602,15 @@ if __name__ == "__main__" :
         app.addLabel('bottom2', '', 1, colspan=2)
         app.setLabelBg("bottom2", "darkred")
 
-        app.setStretch('column')
-        app.setSticky('wen')
-        app.addLabel('postac', '', 2, 0)
-        app.setLabelBg("postac", "indianred")
-        app.addLabel('postaca', '', 2, 1)
-        app.setLabelBg("postaca", "indianred")
-        app.addLabel('postacb', '', 2, 2)
-        app.setLabelBg("postacb", "indianred")
+
 
         app.addLabel("")
-
 
         app.stopTab()
         app.stopTabbedFrame()
 
-
         app.setTabbedFrameBg("Start", "darkred")
-        #app.setTabBg(title = "Start", tab = win.lista_tab[0], colour="darkred")
-        #app.buttons(['LOGIN', 'EXIT'], win.login)
-        #app.registerEvent(win.createDB)
-        #app.setTabbedFrameSelectedTab("Start", "2")
+        # app.setTabBg(title = "Start", tab = win.lista_tab[0], colour="darkred")
+        # app.buttons(['LOGIN', 'EXIT'], win.login)
+        # app.registerEvent(win.createDB)
+        # app.setTabbedFrameSelectedTab("Start", "2")
