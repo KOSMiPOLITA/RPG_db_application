@@ -35,7 +35,7 @@ class window():
         self.lista_wartosci = [1, 2, 3]
         for i in range(21):
             self.lista_stat.append(i)
-        self.lista_tab = ["Karty Postaci", "Klasy & Umiejętności", "Rasy & Efekty", "Kraje pochodzenia", "Zarządzanie danymi"]
+        self.lista_tab = ["Karty Postaci", "Lista klas", "Rasy & Efekty", "Kraje pochodzenia", "Lista Ras i Krajów"]
         for t in range(len(self.lista_tab)):
             tmp = ""
             n = len(max(self.lista_tab)) - len(self.lista_tab[t])
@@ -44,6 +44,9 @@ class window():
                 n -= 1
             self.lista_tab[t] = self.lista_tab[t] + tmp
         self.lista_postaci = ["---------"]
+        self.lista_war_umiej = ["-"]
+        for i in range(51):
+            self.lista_war_umiej.append(i)
 
     def createDB(self):
         if self.database is not None and self.createdInt == 1:
@@ -71,6 +74,8 @@ class window():
             app.enableMenuItem("Dodaj", "Dodaj Postać")
             app.enableMenuItem("Dodaj", "Dodaj Rasę")
             app.enableMenuItem("Dodaj", "Dodaj Kraj")
+            app.enableMenuItem("Umiejętności", "Nowa umiejętność")
+            app.enableMenuItem("Umiejętności", "Dostępne umiejętności")
             app.disableMenuItem("Połącz", "Login")
             usr = app.getEntry("Username")
             pwd = app.getEntry("Password ")
@@ -172,6 +177,42 @@ class window():
         app.changeOptionBox("Nazwa języka :", self.lista_jezykow)
         app.changeOptionBox("Język urzędowy :", self.lista_jezykow)
 
+    def sendSpell(self):
+        nazwa = app.getEntry("Nazwa")
+        poziom = app.getEntry("Poziom")
+        opis = app.getTextArea("opis_umiej")
+        dmg = app.getOptionBox("DMG")
+        heal = app.getOptionBox("HEAL")
+        defe = app.getOptionBox("DEF")
+        pd = app.getOptionBox("P_D")
+        dodatek = app.getEntry("Dodatek")
+        lista = []
+        lista.append(app.getOptionBox("Klasa 1st"))
+        lista.append(app.getOptionBox("Klasa 2nd"))
+        lista.append(app.getOptionBox("Klasa 3rd"))
+        lista.append(app.getOptionBox("Klasa 4th"))
+        lista.append(app.getOptionBox("Klasa 5th"))
+        lista_ost = []
+        for i in lista:
+            if i is not None and i != "---------" and i not in lista_ost:
+                lista_ost.append(i)
+        if dmg is None:
+            dmg = "NULL"
+        if heal is None:
+            heal = "NULL"
+        if defe is None:
+            defe = "NULL"
+        self.database.cursor().execute(
+            f"insert into umiejetnosci values('{nazwa}', '{opis}', {poziom}, "
+            f"{dmg}, {heal}, {defe}, '{pd}', '{dodatek}')")
+        for row in lista_ost:
+            print(row)
+            self.database.cursor().execute(
+                f"insert into umiejetnoscidlaklas values ('{row}', '{nazwa}')")
+        self.database.cursor().execute("commit")
+        app.infoBox("Nowa umiejętność", "Nastąpiło poprawne dodanie umiejętności do bazy danych", parent=None)
+        app.destroySubWindow("Dodaj nową umiejętność")
+
     def doNothing(self):
         pass
 
@@ -205,6 +246,8 @@ class window():
         app.disableMenuItem("Dodaj", "Dodaj Postać")
         app.disableMenuItem("Dodaj", "Dodaj Rasę")
         app.disableMenuItem("Dodaj", "Dodaj Kraj")
+        app.disableMenuItem("Umiejętności", "Nowa umiejętność")
+        app.disableMenuItem("Umiejętności", "Dostępne umiejętności")
         self.database = None
         self.lista = []
         self.createdInt = 1
@@ -673,6 +716,41 @@ class window():
             app.setSticky("nes")
             app.addImage("krolnowyKraj", "krol.gif", 1, 2, rowspan=50)
 
+    def createNewUmiejetnosc(self):
+        with app.subWindow("Dodaj nową umiejętność", modal=True):
+            app.showSubWindow("Dodaj nową umiejętność")
+            app.setResizable(canResize=False)
+            app.setSize(1300, 720)
+            app.setBg(colour="rosybrown", override=False)
+            app.setStretch("column")
+            app.setSticky("new")
+            app.addImage("nowaumiejtlo", "dnd2.gif", colspan=6)
+            app.setSticky("w")
+            app.setPadding([20, 5])
+            app.addLabelEntry("Nazwa", 1, 2)
+            app.addLabelEntry("Poziom", 1, 3)
+            app.addLabel("Opis umiejetnosci :", "Opis umiejętności", 2, 2)
+            app.setSticky("wne")
+            #app.addEntry("Dupa", 3, 2, rowspan=2)
+            app.addTextArea("opis_umiej", 3, 2, colspan=4)
+            app.setSticky("w")
+            app.addLabelOptionBox("DMG", win.lista_war_umiej, 4, 2)
+            app.addLabelOptionBox("HEAL", win.lista_war_umiej, 4, 3)
+            app.addLabelOptionBox("DEF", win.lista_war_umiej, 4, 4)
+            app.addLabelOptionBox("P_D", win.pod_dod, 5, 2)
+            app.addLabelEntry("Dodatek", 5, 3)
+            lista_klas = win.lista_class
+            if "---------" not in lista_klas:
+                lista_klas.insert(0, "---------")
+            app.addLabelOptionBox("Klasa 1st", lista_klas, 6, 2)
+            app.addLabelOptionBox("Klasa 2nd", lista_klas, 6, 3)
+            app.addLabelOptionBox("Klasa 3rd", lista_klas, 6, 4)
+            app.addLabelOptionBox("Klasa 4th", lista_klas, 7, 2)
+            app.addLabelOptionBox("Klasa 5th", lista_klas, 7, 3)
+            app.addButtons(["OK"], win.sendSpell, 7, 4)
+            app.setPadding([0, 0])
+            #app.setSticky("nws")
+            #app.addImage("mag", "mage.gif", 1, 0, rowspan=5)
 
 if __name__ == "__main__":
     win = window()
@@ -681,13 +759,16 @@ if __name__ == "__main__":
         app.setSize(1280, 880)
         fileMenu = ["Login", "Log Out"]
         fileMenu2 = ["Dodaj Postać", "Dodaj Rasę", "Dodaj Kraj"]
+        fileMenu3 = ["Nowa umiejętność", "Dostępne umiejętności"]
         app.addMenuList("Połącz", fileMenu, [win.makeLogin, win.makeLogOut])
         app.addMenuList("Dodaj", fileMenu2, [win.createNewCharacterWindow, win.createNewRaceWindow, win.createNewNationWindow])
+        app.addMenuList("Umiejętności", fileMenu3, [win.createNewUmiejetnosc, win.doNothing])
         app.disableMenuItem("Połącz", "Log Out")
         app.disableMenuItem("Dodaj", "Dodaj Postać")
         app.disableMenuItem("Dodaj", "Dodaj Rasę")
         app.disableMenuItem("Dodaj", "Dodaj Kraj")
-
+        app.disableMenuItem("Umiejętności", "Nowa umiejętność")
+        app.disableMenuItem("Umiejętności", "Dostępne umiejętności")
         app.startTabbedFrame("Start")
 
         #TAG PIERWSZY---------------------------------------------------------------------------------------------------
