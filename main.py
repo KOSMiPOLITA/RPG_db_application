@@ -21,9 +21,12 @@ class window():
         self.lista_races = ["---------"]
         self.lista_jezykow = ["---------"]
         self.lista_efektow = ["--------------------"]
+        self.lista_stron_kon = ["------------"]
         self.EfektAndJezyk = 1
+        self.createdStrony = 1
         self.canLoadEffect = 1
         self.canLoadRace = 1
+        self.canLoadNation = 1
         self.lista_sex = ["N", "F", "M"]
         self.lista_stat = []
         self.postacie_index = []
@@ -32,7 +35,7 @@ class window():
         self.lista_wartosci = [1, 2, 3]
         for i in range(21):
             self.lista_stat.append(i)
-        self.lista_tab = ["Karty Postaci", "Klasy & Umiejętności", "Rasy & Efekty", "Zarządzanie danymi"]
+        self.lista_tab = ["Karty Postaci", "Klasy & Umiejętności", "Rasy & Efekty", "Kraje pochodzenia", "Zarządzanie danymi"]
         for t in range(len(self.lista_tab)):
             tmp = ""
             n = len(max(self.lista_tab)) - len(self.lista_tab[t])
@@ -67,10 +70,12 @@ class window():
             app.enableMenuItem("Połącz", "Log Out")
             app.enableMenuItem("Dodaj", "Dodaj Postać")
             app.enableMenuItem("Dodaj", "Dodaj Rasę")
+            app.enableMenuItem("Dodaj", "Dodaj Kraj")
             app.disableMenuItem("Połącz", "Login")
             usr = app.getEntry("Username")
             pwd = app.getEntry("Password ")
             self.database = connection(usr, pwd)
+            app.setTabbedFrameDisableAllTabs("Start", disabled=False)
             app.destroySubWindow("Logowanie")
 
     def sendCharacter(self):
@@ -101,6 +106,7 @@ class window():
         app.infoBox("Nowa Postać   ", "Nastąpiło poprawne dodanie postaci do bazy danych", parent=None)
         self.lista_postaci.append(nazwa)
         app.changeOptionBox("Lista postaci : ", self.lista_postaci)
+        app.destroySubWindow("Dodaj nową postać")
 
     def sendRace(self):
         nazwa = app.getEntry("Nazwa rasy")
@@ -112,10 +118,37 @@ class window():
         jezyk = app.getOptionBox("Nazwa języka")
         self.database.cursor().execute(
             f"insert into Rasy values ('{nazwa}', '{opis}', {srd}, '{pd}', '{dodatek}', '{efekt}', '{jezyk}')")
+        efekt_lista = self.database.cursor().execute(
+            f"select * from efekty_rasowe where nazwa_efektu = '{efekt}'"
+        )
+        for row in efekt_lista:
+            efekt_lista1 = row
         self.database.cursor().execute("commit")
         app.infoBox("Nowa Rasa  ", "Nastąpiło poprawne dodanie rasy do bazy danych", parent=None)
         self.lista_races.append(nazwa)
+        if dodatek == None:
+            dodatek = ""
         app.changeOptionBox("Rasa :", self.lista_races)
+        app.changeOptionBox("Lista ras : ", self.lista_races)
+        app.addTableRows("tabela_pochodzeń1", [[nazwa, opis, srd, pd, dodatek, jezyk, efekt_lista1[0], efekt_lista1[1], efekt_lista1[2], efekt_lista1[3]]])
+        app.destroySubWindow("Dodaj nową rasę")
+
+
+    def sendNation(self):
+        kraj = app.getEntry("Nazwa Kraju pochodzenia")
+        stolica = app.getEntry("Stolica")
+        strona = app.getOptionBox("Strona konfliktu")
+        jezyk = app.getOptionBox("Język urzędowy")
+        self.database.cursor().execute(
+            f"insert into kraje_pochodzenia values('{kraj}', '{stolica}', '{jezyk}', '{strona}')")
+        self.database.cursor().execute("commit")
+        app.infoBox("Nowy kraj  ", "Nastąpiło poprawne dodanie kraju pochodzenia do bazy danych", parent=None)
+        self.lista_krajow.append(kraj)
+        app.changeOptionBox("Pochodzenie :", self.lista_krajow)
+        app.changeOptionBox("Lista Krajów pochodzenia : ", self.lista_krajow)
+        app.openTab("Start", self.lista_tab[4])
+        app.addTableRows("tabela_pochodzeń", [[kraj, stolica, jezyk, strona]])
+        app.destroySubWindow("Dodaj nowy kraj pochodzenia")
 
     def sendEffect(self):
         nazwa = app.getEntry("Nazwa efektu :")
@@ -137,6 +170,7 @@ class window():
         app.infoBox("Nowy język  ", "Nastąpiło poprawne dodanie języka do bazy danych", parent=None)
         self.lista_jezykow.append(nazwa)
         app.changeOptionBox("Nazwa języka :", self.lista_jezykow)
+        app.changeOptionBox("Język urzędowy :", self.lista_jezykow)
 
     def doNothing(self):
         pass
@@ -165,10 +199,12 @@ class window():
             app.addImage("smog2", "dolLogin.gif")
 
     def makeLogOut(self):
+        app.setTabbedFrameDisableAllTabs("Start", disabled=True)
         app.enableMenuItem("Połącz", "Login")
         app.disableMenuItem("Połącz", "Log Out")
         app.disableMenuItem("Dodaj", "Dodaj Postać")
         app.disableMenuItem("Dodaj", "Dodaj Rasę")
+        app.disableMenuItem("Dodaj", "Dodaj Kraj")
         self.database = None
         self.lista = []
         self.createdInt = 1
@@ -183,18 +219,32 @@ class window():
         self.lista_jezykow = ["---------"]
         self.lista_efektow = ["--------------------"]
         self.EfektAndJezyk = 1
+        self.createdStrony = 1
+        self.canLoadNation = 1
+        self.lista_stron_kon = ["------------"]
         app.openTab("Start", self.lista_tab[1])
-        app.changeOptionBox("Wybierz klasę", self.lista_class, 0, 0)
-        app.changeOptionBox("Rasa :", self.lista_races, 0, 0)
-        app.changeOptionBox("Pochodzenie :", self.lista_krajow, 0, 0)
-        app.changeOptionBox("Nazwa języka", self.lista_jezykow)
-        app.changeOptionBox("Efekt rasy", self.lista_efektow)
+        app.changeOptionBox("Wybierz klasę", self.lista_class)
+        app.changeOptionBox("Rasa :", self.lista_races)
+        app.changeOptionBox("Pochodzenie :", self.lista_krajow)
         app.changeOptionBox("Lista ras : ", self.lista_races)
+        app.changeOptionBox("Klasa :", self.lista_class)
         app.changeOptionBox("Lista postaci : ", self.lista_postaci)
+        app.changeOptionBox("Lista Krajów pochodzenia : ", self.lista_krajow)
+        app.changeOptionBox("Strona konfliktu :", self.lista_stron_kon)
         app.changeOptionBox("Nazwa języka :", self.lista_jezykow)
+        app.changeOptionBox("Język urzędowy :", self.lista_jezykow)
         app.changeOptionBox("Efekt rasy :", self.lista_efektow)
         app.stopTab()
         app.infoBox("Wylogowywanie", "Nastąpiło poprawne wylogowanie z Bazy Danych", parent=None)
+
+    def createTableOfStronyKonfliktu(self):
+        if self.database is not None and self.createdStrony == 1:
+            self.lista_stron_kon = []
+            self.createdStrony = 0
+            stronyDB = self.database.cursor().execute('select * from strony_konfliktu')
+            for row in stronyDB:
+                self.lista_stron_kon.append(row[0])
+            app.changeOptionBox("Strona konfliktu :", self.lista_stron_kon)
 
     def createTableOfCharacters(self):
         if self.database is not None and self.createdPostacie == 1:
@@ -219,6 +269,7 @@ class window():
             for row in jezykDB:
                 self.lista_jezykow.append(row[0])
             app.changeOptionBox("Nazwa języka :", self.lista_jezykow)
+            app.changeOptionBox("Język urzędowy :", self.lista_jezykow)
             app.changeOptionBox("Efekt rasy :", self.lista_efektow)
 
     def createTableOfNations(self):
@@ -241,6 +292,8 @@ class window():
                 #    tmp.append(item)
                 # kreajeLista.append(tmp)
             app.changeOptionBox("Pochodzenie :", self.lista_krajow)
+            app.changeOptionBox("Lista Krajów pochodzenia : ", self.lista_krajow)
+
 
     def createTableOfRaces(self):
         if self.database is not None and self.createdRace == 1:
@@ -282,15 +335,9 @@ class window():
                     tmp.append(item)
                 klasyLista.append(tmp)
 
-            app.openTab("Start", self.lista_tab[3])
+            app.openTab("Start", self.lista_tab[4])
             app.setStretch('column')
             app.setSticky('wen')
-            app.addLabel('postac', '', 2, 0)
-            app.setLabelBg("postac", "indianred")
-            app.addLabel('postaca', '', 2, 1)
-            app.setLabelBg("postaca", "indianred")
-            app.addLabel('postacb', '', 2, 2)
-            app.setLabelBg("postacb", "indianred")
             app.setSticky("news")
             app.setPadding([20, 20])
             app.addTable("tabela_pochodzeń", klasyLista, wrap="700", row=5)
@@ -298,8 +345,9 @@ class window():
             klasyLista = []
             klasyDBNaglowek = self.database.cursor().execute(
                 "select column_name from user_tab_cols where table_name = 'RASY'")
-            klasyDB = self.database.cursor().execute("select * from rasy r inner join efekty_rasowe e on r.nazwa_efektu = e.nazwa_efektu")
-
+            klasyDB = self.database.cursor().execute("select nazwa, opis_rasy, srd_dlugosc_zycia, "
+                                                     "p_d, nazwa_dodatku, nazwa_jezyka, e.nazwa_efektu, opis_efektu, statystyka, "
+                                                     "wartosc_wzm from rasy r inner join efekty_rasowe e on r.nazwa_efektu = e.nazwa_efektu")
             tmp = []
             for row in klasyDBNaglowek:
                 row = str(row).replace("('", "").replace("',)", "")
@@ -310,6 +358,7 @@ class window():
                 row = str(row).replace("('", "").replace("',)", "")
                 tmp.append(row)
             klasyLista.append(tmp)
+            klasyLista[0].pop(5)
             for row in klasyDB:
                 tmp = []
                 for item in row:
@@ -427,7 +476,6 @@ class window():
             rasaDB = self.database.cursor().execute(f"select * from rasy where nazwa = '{rasa}'")
             for row in rasaDB:
                 rasaDB = row
-            app.setEntry("Nazwa rasy :", rasaDB[0])
             app.clearTextArea("Opis rasy :", callFunction=True)
             app.setTextArea("Opis rasy :", rasaDB[1])
             app.setEntry("Długość życia :", rasaDB[2])
@@ -436,9 +484,28 @@ class window():
             app.setOptionBox("Efekt rasy :", rasaDB[5])
             app.setOptionBox("Nazwa języka :", rasaDB[6])
 
+    def loadNationData(self):
+        if self.database is not None and self.canLoadNation == 1:
+            kraj = app.getOptionBox("Lista Krajów pochodzenia : ")
+            krajDB = self.database.cursor().execute(f"select * from kraje_pochodzenia where nazwa = '{kraj}'")
+            for row in krajDB:
+                krajDB = row
+            app.setEntry("Stolica :", krajDB[1])
+            app.setOptionBox("Strona konfliktu :", krajDB[3])
+            app.setOptionBox("Język urzędowy :", krajDB[2])
+
+    def editKraje(self):
+        kraj = app.getOptionBox("Lista Krajów pochodzenia : ")
+        stolica = app.getEntry("Stolica :")
+        strona = app.getOptionBox("Strona konfliktu :")
+        jezyk = app.getOptionBox("Język urzędowy :")
+        self.database.cursor().execute(
+            f"update kraje_pochodzenia set nazwa = '{kraj}', stolica = '{stolica}', jezyk_urzedowy = '{jezyk}', nazwa_strony = '{strona}' where nazwa = '{kraj}'")
+        self.database.cursor().execute("commit")
+        app.infoBox("Zmień dane", "Dane wskazanego kraju zostały poprawnie zmienione", parent=None)
+
     def editRasy(self):
         rasa = app.getOptionBox("Lista ras : ")
-        nazwa = app.getEntry("Nazwa rasy :")
         opis = app.getTextArea("Opis rasy :")
         srd = app.getEntry("Długość życia :")
         pd = app.getOptionBox("Pod / Dod :")
@@ -446,13 +513,13 @@ class window():
         efekt = app.getOptionBox("Efekt rasy :")
         jezyk = app.getOptionBox("Nazwa języka :")
         self.database.cursor().execute(
-            f"update rasy set nazwa = '{nazwa}', opis_rasy = '{opis}', srd_dlugosc_zycia = {srd}, p_d = '{pd}', nazwa_dodatku = '{dod}', "
+            f"update rasy set nazwa = '{rasa}', opis_rasy = '{opis}', srd_dlugosc_zycia = {srd}, p_d = '{pd}', nazwa_dodatku = '{dod}', "
             f"nazwa_efektu = '{efekt}', nazwa_jezyka = '{jezyk}' where nazwa = '{rasa}'")
-        for pse in range(len(self.lista_races)):
+        '''for pse in range(len(self.lista_races)):
             if self.lista_races[pse] == rasa:
                 self.lista_races[pse] = nazwa
                 app.changeOptionBox("Lista ras : ", self.lista_races)
-                app.changeOptionBox("Rasa :", self.lista_races)
+                app.changeOptionBox("Rasa :", self.lista_races)'''
         self.database.cursor().execute("commit")
         app.infoBox("Zmień dane", "Dane wskazanej rasy zostały poprawnie zmienione", parent=None)
 
@@ -507,7 +574,7 @@ class window():
             app.setPadding([20, 0])
             app.setStretch("column")
             app.setSticky("w")
-            app.addLabel("KartaPos", "Karta Postaci", 1, 0)
+            app.addLabel("KartaPos", "~~Karta Postaci~~", 1, 0)
 
 
             app.setSticky("w")
@@ -555,10 +622,10 @@ class window():
             app.setBg(colour="beige", override=False)
             app.setStretch("column")
             app.setSticky("new")
-            app.addImage("nowapostactlo", "dnd2.gif", colspan=4)
+            app.addImage("nowarasatlo", "dnd2.gif", colspan=4)
             app.setSticky("w")
             app.setPadding([20, 0])
-            app.addLabel("Dodawanie Rasy", "Dodawanie Rasy", 1, 0)
+            app.addLabel("Dodawanie Rasy", "~~Dodawanie Rasy~~", 1, 0)
             app.addLabel("puste30", "", 1, 1)
             app.addLabel("puste31", "", 1, 2)
             app.addLabelEntry("Nazwa rasy", 2, 0, colspan=2)
@@ -579,18 +646,47 @@ class window():
             app.setSticky("nes")
             app.addImage("krol22", "krol.gif", 1, 3, rowspan=50)
 
+    def createNewNationWindow(self):
+        with app.subWindow("Dodaj nowy kraj pochodzenia", modal=True):
+            app.showSubWindow("Dodaj nowy kraj pochodzenia")
+            app.setResizable(canResize=False)
+            app.setSize(1280, 760)
+            app.setBg(colour="beige", override=False)
+            app.setStretch("column")
+            app.setSticky("new")
+            app.addImage("nowykrajtlo", "dnd2.gif", colspan=3)
+            app.setSticky("w")
+            app.setPadding([20, 0])
+            app.addLabel("Dodawanie Kraju pochodzenia", "~~Dodawanie Kraju pochodzenia~~", 1, 0)
+            app.addLabel("puste330", "", 1, 1)
+            app.addLabel("puste331", "", 1, 2)
+            app.setSticky("w")
+            app.setPadding([20, 10])
+
+            app.addLabelEntry("Nazwa Kraju pochodzenia", 2, 0)
+            app.addLabelEntry("Stolica", 3, 0)
+            app.addLabelOptionBox("Strona konfliktu", win.lista_stron_kon, 4, 0)
+            app.addLabelOptionBox("Język urzędowy", win.lista_jezykow, 5, 0)
+            app.addButtons(['Dodaj kraj'], win.sendNation, 5, 1)
+
+            app.setPadding([0, 0])
+            app.setSticky("nes")
+            app.addImage("krolnowyKraj", "krol.gif", 1, 2, rowspan=50)
+
+
 if __name__ == "__main__":
     win = window()
     with gui('Baza Danych RPG') as app:
         app.setResizable(canResize=True)
         app.setSize(1280, 880)
         fileMenu = ["Login", "Log Out"]
-        fileMenu2 = ["Dodaj Postać", "Dodaj Rasę"]
+        fileMenu2 = ["Dodaj Postać", "Dodaj Rasę", "Dodaj Kraj"]
         app.addMenuList("Połącz", fileMenu, [win.makeLogin, win.makeLogOut])
-        app.addMenuList("Dodaj", fileMenu2, [win.createNewCharacterWindow, win.createNewRaceWindow])
+        app.addMenuList("Dodaj", fileMenu2, [win.createNewCharacterWindow, win.createNewRaceWindow, win.createNewNationWindow])
         app.disableMenuItem("Połącz", "Log Out")
         app.disableMenuItem("Dodaj", "Dodaj Postać")
         app.disableMenuItem("Dodaj", "Dodaj Rasę")
+        app.disableMenuItem("Dodaj", "Dodaj Kraj")
 
         app.startTabbedFrame("Start")
 
@@ -615,7 +711,7 @@ if __name__ == "__main__":
         app.addButtons(["Edytuj Postać"], win.loadCharacterData, 2, 2)
         app.setStretch("column")
         app.setSticky("w")
-        app.addLabel("KartaPos_g", "Karta Postaci", 3, 0, colspan=3)
+        app.addLabel("KartaPos_g", "~~Karta Postaci~~", 3, 0, colspan=3)
 
         app.addLabelEntry("Nazwa :", 4, 0)
         app.addLabelOptionBox("Level Postaci :", win.lista_stat, 4, 1)
@@ -655,7 +751,7 @@ if __name__ == "__main__":
         app.registerEvent(win.createTableOfCharacters)
         app.registerEvent(win.createTableOfRaces)
         app.registerEvent(win.createTableOfNations)
-
+        app.registerEvent(win.createTableOfStronyKonfliktu)
         app.stopTab()
 
 
@@ -702,21 +798,21 @@ if __name__ == "__main__":
         app.addLabelOptionBox("Lista ras : ", win.lista_races, 2, 0)
         app.addButtons(["Edytuj Rasę"], win.loadRaceData, 2, 1)
         app.setSticky("w")
-        app.addLabel("Edytowanie Rasy :", "Edytowanie Rasy", 3, 0)
+        app.addLabel("Edytowanie Rasy :", "~~Edytowanie Rasy~~", 3, 0)
         app.addLabel("pusty91", "                            ", 3, 2)
-        app.addLabelEntry("Nazwa rasy :", 4, 0, colspan=3)
-        app.addLabel("RasaDoWczytania2", "Opis rasy :", 5, 0)
+        #app.addLabelEntry("Nazwa rasy :", 4, 0, colspan=3)
+        app.addLabel("RasaDoWczytania2", "Opis rasy :", 4, 0)
         app.setSticky("nwes")
-        app.addTextArea("Opis rasy :", 6, 0, colspan=2, rowspan=4)
+        app.addTextArea("Opis rasy :", 5, 0, colspan=2, rowspan=4)
         app.setSticky("w")
-        app.addLabelEntry("Długość życia :", 10, 0)
-        app.addLabelOptionBox("Pod / Dod :", win.pod_dod, 11, 0)
+        app.addLabelEntry("Długość życia :", 9, 0)
+        app.addLabelOptionBox("Pod / Dod :", win.pod_dod, 10, 0)
         app.setSticky("we")
-        app.addLabelEntry("Dodatek :", 12, 0)
+        app.addLabelEntry("Dodatek :", 11, 0)
         app.setSticky("w")
-        app.addLabelOptionBox("Efekt rasy :", win.lista_efektow, 13, 0)
-        app.addLabelOptionBox("Nazwa języka :", win.lista_jezykow, 14, 0)
-        app.addButtons(['Zmień dane '], win.editRasy, 14, 1)
+        app.addLabelOptionBox("Efekt rasy :", win.lista_efektow, 12, 0)
+        app.addLabelOptionBox("Nazwa języka :", win.lista_jezykow, 13, 0)
+        app.addButtons(['Zmień dane '], win.editRasy, 13, 1)
 
         app.addLabel("Dodaj nowy efekt", "Nowy efekt rasowy :", 2, 3)
         app.addButtons(['Dodaj efekt'], win.sendEffect, 2, 4)
@@ -751,21 +847,51 @@ if __name__ == "__main__":
         app.startTab(win.lista_tab[3])
         app.setStretch("column")
         app.setSticky("new")
-        app.addImage("tlo4", "dnd2.gif")
+        app.addImage("tlo4", "dnd2.gif", colspan=3)
         app.setBg(colour="beige", override=False)
         app.setStretch('column')
         app.setSticky('wen')
-        app.addLabel('bottom4', '', 1, colspan=2)
+        app.addLabel('bottom4', '', 1, colspan=3)
         app.setLabelBg("bottom4", "darkred")
 
+        app.setSticky("we")
+        app.setPadding([20, 10])
 
+        app.addLabelOptionBox("Lista Krajów pochodzenia : ", win.lista_krajow, 2, 0)
+        app.setSticky("w")
+        app.addButtons(["Edytuj Kraj"], win.loadNationData, 2, 1)
 
-        app.addLabel("")
+        app.addLabel("Edytowanie Kraju pochodzenia :", "~~Edytowanie Kraju pochodzenia~~", 3, 0)
+
+        #app.addLabelEntry("Nazwa Kraju pochodzenia :", 4, 0)
+        app.addLabelEntry("Stolica :", 4, 0)
+        app.addLabelOptionBox("Strona konfliktu :", win.lista_stron_kon, 5, 0)
+        app.addLabelOptionBox("Język urzędowy :", win.lista_jezykow, 6, 0)
+        app.addButtons(['Zmień dane   '], win.editKraje, 6, 1)
+
+        app.setPadding([0, 0])
+        app.setSticky("nes")
+        app.addImage("krolKraje", "krol.gif", 2, 2, rowspan=50)
+        app.stopTab()
+
+        # TAG PIĄTY---------------------------------------------------------------------------------------------------
+
+        app.startTab(win.lista_tab[4])
+        app.setStretch("column")
+        app.setSticky("new")
+        app.addImage("tlo5", "dnd2.gif", colspan=3)
+        app.setBg(colour="beige", override=False)
+        app.setStretch('column')
+        app.setSticky('wen')
+        app.addLabel('bottom5', '', 1, colspan=3)
+        app.setLabelBg("bottom5", "darkred")
 
         app.stopTab()
         app.stopTabbedFrame()
 
         app.setTabbedFrameBg("Start", "darkred")
+
+        app.setTabbedFrameDisableAllTabs("Start", disabled=True)
         # app.setTabBg(title = "Start", tab = win.lista_tab[0], colour="darkred")
         # app.buttons(['LOGIN', 'EXIT'], win.login)
         # app.registerEvent(win.createDB)
