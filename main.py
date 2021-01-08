@@ -7,6 +7,7 @@ import datetime
 class window():
 
     def __init__(self):
+        self.iterator = 0
         self.database = None
         self.lista = []
         self.canLoad = 1
@@ -63,6 +64,7 @@ class window():
         if btn == 'LOGIN':
             self.makeLogin()
             app.showSubWindow('Logowanie')
+            app.emptyCurrentContainer()
         else:
             app.stop()
 
@@ -95,7 +97,7 @@ class window():
         waga = app.getEntry("Waga")
         skora = app.getEntry("Kolor skóry")
         wlosy = app.getEntry("Kolor włosów")
-        oczy = app.getEntry("Kolor oczów")
+        oczy = app.getEntry("Kolor oczu")
         hp = app.getEntry("HP")
         sta = app.getEntry("STA")
         strg = app.getOptionBox("STR")
@@ -149,7 +151,7 @@ class window():
         self.database.cursor().execute("commit")
         app.infoBox("Nowy kraj  ", "Nastąpiło poprawne dodanie kraju pochodzenia do bazy danych", parent=None)
         self.lista_krajow.append(kraj)
-        app.changeOptionBox("Pochodzenie :", self.lista_krajow)
+        app.changeOptionBox("Kraj :", self.lista_krajow)
         app.changeOptionBox("Lista Krajów pochodzenia : ", self.lista_krajow)
         app.openTab("Start", self.lista_tab[4])
         app.addTableRows("tabela_pochodzeń", [[kraj, stolica, jezyk, strona]])
@@ -178,8 +180,8 @@ class window():
         app.changeOptionBox("Język urzędowy :", self.lista_jezykow)
 
     def sendSpell(self):
-        nazwa = app.getEntry("Nazwa")
-        poziom = app.getEntry("Poziom")
+        nazwa = app.getEntry("Nazwa umiej.")
+        poziom = app.getEntry("Poziom umiej.")
         opis = app.getTextArea("opis_umiej")
         dmg = app.getOptionBox("DMG")
         heal = app.getOptionBox("HEAL")
@@ -218,6 +220,7 @@ class window():
 
     def makeLogin(self):
         with app.subWindow('Logowanie', modal=True):
+            app.emptyCurrentContainer()
             app.setResizable(canResize=False)
             app.showSubWindow("Logowanie")
             app.setBg("indianred")
@@ -268,7 +271,7 @@ class window():
         app.openTab("Start", self.lista_tab[1])
         app.changeOptionBox("Wybierz klasę", self.lista_class)
         app.changeOptionBox("Rasa :", self.lista_races)
-        app.changeOptionBox("Pochodzenie :", self.lista_krajow)
+        app.changeOptionBox("Kraj :", self.lista_krajow)
         app.changeOptionBox("Lista ras : ", self.lista_races)
         app.changeOptionBox("Klasa :", self.lista_class)
         app.changeOptionBox("Lista postaci : ", self.lista_postaci)
@@ -334,7 +337,7 @@ class window():
                 # for item in row:
                 #    tmp.append(item)
                 # kreajeLista.append(tmp)
-            app.changeOptionBox("Pochodzenie :", self.lista_krajow)
+            app.changeOptionBox("Kraj :", self.lista_krajow)
             app.changeOptionBox("Lista Krajów pochodzenia : ", self.lista_krajow)
 
 
@@ -453,7 +456,7 @@ class window():
             app.setOptionBox("Płeć :", postacDB[6])
 
             app.setOptionBox("Rasa :", postacDB[18])
-            app.setOptionBox("Pochodzenie :", postacDB[19])
+            app.setOptionBox("Kraj :", postacDB[19])
             app.setOptionBox("Klasa :", postacDB[20])
 
             app.setEntry("Wiek :", postacDB[3])
@@ -462,7 +465,7 @@ class window():
 
             app.setEntry("Kolor skóry :", postacDB[7])
             app.setEntry("Kolor włosów :", postacDB[8])
-            app.setEntry("Kolor oczów :", postacDB[9])
+            app.setEntry("Kolor oczu :", postacDB[9])
 
             app.setSticky("e")
             app.setEntry("HP :", postacDB[10])
@@ -485,14 +488,14 @@ class window():
         levela = app.getOptionBox("Level Postaci :")
         plec = app.getOptionBox("Płeć :")
         rasa = app.getOptionBox("Rasa :")
-        pochodzenia = app.getOptionBox("Pochodzenie :")
+        pochodzenia = app.getOptionBox("Kraj :")
         klasa = app.getOptionBox("Klasa :")
         wiek = app.getEntry("Wiek :")
         wzrost = app.getEntry("Wzrost :")
         waga = app.getEntry("Waga :")
         skora = app.getEntry("Kolor skóry :")
         wlosy = app.getEntry("Kolor włosów :")
-        oczy = app.getEntry("Kolor oczów :")
+        oczy = app.getEntry("Kolor oczu :")
         hp = app.getEntry("HP :")
         sta = app.getEntry("STA :")
         strg = app.getOptionBox("STR :")
@@ -567,6 +570,7 @@ class window():
         app.infoBox("Zmień dane", "Dane wskazanej rasy zostały poprawnie zmienione", parent=None)
 
     def createTableOfAbilities(self):
+        self.iterator += 1
         if self.tabOfAb > 1:
             app.destroySubWindow("Umiejętność wybranej klasy")
         if self.database is not None:
@@ -596,28 +600,31 @@ class window():
             with app.subWindow("Umiejętność wybranej klasy", modal=True):
                 app.showSubWindow("Umiejętność wybranej klasy")
                 app.setSize(1280, 720)
+                app.setBg(colour="beige", override=False)
                 app.setStretch("column")
                 app.setSticky("ew")
-                app.addImage(f"klasy{self.tabOfAb}", "dnd2.gif", colspan=3)
+                app.addImage(f"klasy{self.iterator}", "dnd2.gif", colspan=3)
                 app.setStretch("both")
                 app.setSticky("news")
                 app.setPadding([20, 20])
-                app.addTable(f"tabela_umiejetnosci_dla_klas{self.tabOfAb}", umiejLista, wrap="500")
+                app.addTable(f"tabela_umiejetnosci_dla_klas{self.iterator}", umiejLista, wrap="500")
 
     def createNewCharacterWindow(self):
+        self.iterator += 1
         with app.subWindow("Dodaj nową postać", modal=True):
             app.showSubWindow("Dodaj nową postać")
+            app.emptyCurrentContainer()
             app.setResizable(canResize=False)
             app.setSize(1280, 720)
             app.setBg(colour="beige", override=False)
             app.setStretch("column")
             app.setSticky("new")
-            app.addImage("smokPostac", "dnd2.gif", 0, colspan=4)
+            app.addImage(f"smokPostac{self.iterator}", "dnd2.gif", 0, colspan=4)
 
             app.setPadding([20, 0])
             app.setStretch("column")
             app.setSticky("w")
-            app.addLabel("KartaPos", "~~Karta Postaci~~", 1, 0)
+            app.addLabel(f"KartaPos{self.iterator}", "~~Karta Postaci~~", 1, 0)
 
 
             app.setSticky("w")
@@ -635,7 +642,7 @@ class window():
 
             app.addLabelEntry("Kolor skóry", 5, 0)
             app.addLabelEntry("Kolor włosów", 5, 1)
-            app.addLabelEntry("Kolor oczów", 5, 2)
+            app.addLabelEntry("Kolor oczu", 5, 2)
 
             app.setSticky("e")
             app.addLabelEntry("HP", 6, 0)
@@ -655,17 +662,19 @@ class window():
 
             app.setPadding([0, 0])
             app.setSticky("nwes")
-            app.addImage("krol", "krol.gif", 1, 3, rowspan=50)
+            app.addImage(f"krol{self.iterator}", "krol.gif", 1, 3, rowspan=50)
 
     def createNewRaceWindow(self):
+        self.iterator += 1
         with app.subWindow("Dodaj nową rasę", modal=True):
             app.showSubWindow("Dodaj nową rasę")
+            app.emptyCurrentContainer()
             app.setResizable(canResize=False)
             app.setSize(1280, 760)
             app.setBg(colour="beige", override=False)
             app.setStretch("column")
             app.setSticky("new")
-            app.addImage("nowarasatlo", "dnd2.gif", colspan=4)
+            app.addImage(f"nowarasatlo{self.iterator}", "dnd2.gif", colspan=4)
             app.setSticky("w")
             app.setPadding([20, 0])
             app.addLabel("Dodawanie Rasy", "~~Dodawanie Rasy~~", 1, 0)
@@ -687,17 +696,19 @@ class window():
 
             app.setPadding([0, 0])
             app.setSticky("nes")
-            app.addImage("krol22", "krol.gif", 1, 3, rowspan=50)
+            app.addImage(f"krol22{self.iterator}", "krol.gif", 1, 3, rowspan=50)
 
     def createNewNationWindow(self):
+        self.iterator += 1
         with app.subWindow("Dodaj nowy kraj pochodzenia", modal=True):
             app.showSubWindow("Dodaj nowy kraj pochodzenia")
+            app.emptyCurrentContainer()
             app.setResizable(canResize=False)
             app.setSize(1280, 760)
             app.setBg(colour="beige", override=False)
             app.setStretch("column")
             app.setSticky("new")
-            app.addImage("nowykrajtlo", "dnd2.gif", colspan=3)
+            app.addImage(f"nowykrajtlo{self.iterator}", "dnd2.gif", colspan=3)
             app.setSticky("w")
             app.setPadding([20, 0])
             app.addLabel("Dodawanie Kraju pochodzenia", "~~Dodawanie Kraju pochodzenia~~", 1, 0)
@@ -714,43 +725,114 @@ class window():
 
             app.setPadding([0, 0])
             app.setSticky("nes")
-            app.addImage("krolnowyKraj", "krol.gif", 1, 2, rowspan=50)
+            app.addImage(f"krolnowyKraj{self.iterator}", "krol.gif", 1, 2, rowspan=50)
 
     def createNewUmiejetnosc(self):
+        self.iterator += 1
         with app.subWindow("Dodaj nową umiejętność", modal=True):
             app.showSubWindow("Dodaj nową umiejętność")
+            app.emptyCurrentContainer()
             app.setResizable(canResize=False)
             app.setSize(1300, 720)
-            app.setBg(colour="rosybrown", override=False)
+            app.setBg(colour="beige", override=False)
             app.setStretch("column")
             app.setSticky("new")
-            app.addImage("nowaumiejtlo", "dnd2.gif", colspan=6)
+            app.addImage(f"nowaumiejtlo{self.iterator}", "dnd2.gif", colspan=5)
             app.setSticky("w")
             app.setPadding([20, 5])
-            app.addLabelEntry("Nazwa", 1, 2)
-            app.addLabelEntry("Poziom", 1, 3)
-            app.addLabel("Opis umiejetnosci :", "Opis umiejętności", 2, 2)
+            app.addLabel("~~Nowa umiejętność~~", "~~Nowa umiejętność~~", 1, 0, colspan=2)
+            app.addLabelEntry("Nazwa umiej.", 2, 0)
+            app.addLabelEntry("Poziom umiej.", 2, 1)
+            app.addLabel("Opis umiejetnosci :", "Opis umiejętności", 3, 0)
             app.setSticky("wne")
             #app.addEntry("Dupa", 3, 2, rowspan=2)
-            app.addTextArea("opis_umiej", 3, 2, colspan=4)
+            app.addTextArea("opis_umiej", 4, 0, colspan=4)
             app.setSticky("w")
-            app.addLabelOptionBox("DMG", win.lista_war_umiej, 4, 2)
-            app.addLabelOptionBox("HEAL", win.lista_war_umiej, 4, 3)
-            app.addLabelOptionBox("DEF", win.lista_war_umiej, 4, 4)
-            app.addLabelOptionBox("P_D", win.pod_dod, 5, 2)
-            app.addLabelEntry("Dodatek", 5, 3)
+            app.addLabelOptionBox("DMG", win.lista_war_umiej, 5, 0)
+            app.addLabelOptionBox("HEAL", win.lista_war_umiej, 5, 1)
+            app.addLabelOptionBox("DEF", win.lista_war_umiej, 5, 2)
+            app.addLabelOptionBox("P_D", win.pod_dod, 6, 0)
+            app.addLabelEntry("Dodatek", 6, 1)
             lista_klas = win.lista_class
             if "---------" not in lista_klas:
                 lista_klas.insert(0, "---------")
-            app.addLabelOptionBox("Klasa 1st", lista_klas, 6, 2)
-            app.addLabelOptionBox("Klasa 2nd", lista_klas, 6, 3)
-            app.addLabelOptionBox("Klasa 3rd", lista_klas, 6, 4)
-            app.addLabelOptionBox("Klasa 4th", lista_klas, 7, 2)
-            app.addLabelOptionBox("Klasa 5th", lista_klas, 7, 3)
-            app.addButtons(["OK"], win.sendSpell, 7, 4)
+            app.addLabelOptionBox("Klasa 1st", lista_klas, 7, 0)
+            app.addLabelOptionBox("Klasa 2nd", lista_klas, 7, 1)
+            app.addLabelOptionBox("Klasa 3rd", lista_klas, 7, 2)
+            app.addLabelOptionBox("Klasa 4th", lista_klas, 8, 0)
+            app.addLabelOptionBox("Klasa 5th", lista_klas, 8, 1)
+            app.addButtons(["OK"], win.sendSpell, 8, 2)
             app.setPadding([0, 0])
-            #app.setSticky("nws")
-            #app.addImage("mag", "mage.gif", 1, 0, rowspan=5)
+            app.setSticky("nes")
+            app.addImage(f"krolNowaUmiej{self.iterator}", "krol.gif", 1, 3, rowspan=50)
+
+    def makeChooseCharacterForCheckingSpells(self):
+        with app.subWindow('Wybór postaci', modal=True):
+            app.emptyCurrentContainer()
+            app.setResizable(canResize=False)
+            app.showSubWindow("Wybór postaci")
+            app.setBg("indianred")
+            app.setSize(400, 200)
+            app.setSticky("new")
+            app.addImage("smogA", "goraLogin.gif")
+
+            app.setPadding([20, 5])
+            app.addLabelOptionBox("Wybierz postać :", self.lista_postaci)
+
+            app.addButtons(["Choose", "Cancel"], self.showMySpells)
+
+            app.setPadding([0, 0])
+            app.setSticky("sew")
+            app.addImage("smogB", "dolLogin.gif")
+
+    def showMySpells(self, button):
+        self.iterator += 1
+        cur_character = app.getOptionBox("Wybierz postać :")
+        if button == "Cancel":
+            app.destroySubWindow("Wybór postaci")
+        else:
+            app.destroySubWindow("Wybór postaci")
+            umiejLista = []
+            tmp = []
+            danePostaci = self.database.cursor().execute(f"select poziom, nazwa_klasy from postacie "
+                                                         f"where nazwa_postaci = '{cur_character}'")
+            for row in danePostaci:
+                Postac = row
+            umiejDBNaglowek = self.database.cursor().execute(
+                "select column_name from user_tab_cols where table_name = 'UMIEJETNOSCI'")
+            for row in umiejDBNaglowek:
+                row = str(row).replace("('", "").replace("',)", "")
+                tmp.append(row)
+            umiejLista.append(tmp)
+            query = (
+                f"select nazwa, opis_umiejetnosci, poziom, dmg, heal, def, p_d, nazwa_dodatku from Umiejetnosci u "
+                f"inner join UmiejetnosciDlaKlas uk on uk.umiejetnosc = u.nazwa "
+                f"where uk.klasa = '{Postac[1]}' and u.poziom <= {Postac[0]}")
+            umiejDB = self.database.cursor().execute(query)
+            for row in umiejDB:
+                tmp = []
+                self.lista_class.append(row[0])
+                for item in row:
+                    if item == None:
+                        item = '-'
+                    tmp.append(item)
+                umiejLista.append(tmp)
+
+            with app.subWindow(f"Umiejętności postaci: {cur_character}", modal=True):
+                app.showSubWindow(f"Umiejętności postaci: {cur_character}")
+                app.emptyCurrentContainer()
+                app.setResizable(canResize=False)
+                app.setSize(1300, 720)
+                app.setBg(colour="beige", override=False)
+                app.setStretch("column")
+                app.setSticky("new")
+                app.addImage(f"showumiejtlo{self.iterator}", "dnd2.gif", colspan=5)
+                app.setSticky("w")
+                app.setPadding([20, 5])
+                app.addLabel(f"~~Lista umiejętności postaci {self.iterator}", f"~~Lista umiejętności postaci: {cur_character}~~", 1, 0, colspan=2)
+                app.setSticky("news")
+                app.setPadding([20, 20])
+                app.addTable(f"tabela_umiejetnosci_dla_klas {self.iterator}", umiejLista, wrap="500")
 
 if __name__ == "__main__":
     win = window()
@@ -762,7 +844,7 @@ if __name__ == "__main__":
         fileMenu3 = ["Nowa umiejętność", "Dostępne umiejętności"]
         app.addMenuList("Połącz", fileMenu, [win.makeLogin, win.makeLogOut])
         app.addMenuList("Dodaj", fileMenu2, [win.createNewCharacterWindow, win.createNewRaceWindow, win.createNewNationWindow])
-        app.addMenuList("Umiejętności", fileMenu3, [win.createNewUmiejetnosc, win.doNothing])
+        app.addMenuList("Umiejętności", fileMenu3, [win.createNewUmiejetnosc, win.makeChooseCharacterForCheckingSpells])
         app.disableMenuItem("Połącz", "Log Out")
         app.disableMenuItem("Dodaj", "Dodaj Postać")
         app.disableMenuItem("Dodaj", "Dodaj Rasę")
@@ -798,17 +880,19 @@ if __name__ == "__main__":
         app.addLabelOptionBox("Level Postaci :", win.lista_stat, 4, 1)
         app.addLabelOptionBox("Płeć :", win.lista_sex, 4, 2)
 
+        app.setSticky("we")
         app.addLabelOptionBox("Rasa :", win.lista_races, 5, 0)
-        app.addLabelOptionBox("Pochodzenie :", win.lista_krajow, 5, 1)
+        app.addLabelOptionBox("Kraj :", win.lista_krajow, 5, 1)
         app.addLabelOptionBox("Klasa :", win.lista_class, 5, 2)
 
+        app.setSticky("w")
         app.addLabelEntry("Wiek :", 6, 0)
         app.addLabelEntry("Wzrost :", 6, 1)
         app.addLabelEntry("Waga :", 6, 2)
 
         app.addLabelEntry("Kolor skóry :", 7, 0)
         app.addLabelEntry("Kolor włosów :", 7, 1)
-        app.addLabelEntry("Kolor oczów :", 7, 2)
+        app.addLabelEntry("Kolor oczu :", 7, 2)
 
         app.setSticky("e")
         app.addLabelEntry("HP :", 8, 0)
