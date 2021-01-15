@@ -9,6 +9,7 @@ class window():
 
 
     def __init__(self):
+        self.aktualnaKlasa = None
         self.iterator = 0
         self.database = None
         self.lista = []
@@ -52,6 +53,10 @@ class window():
             self.lista_war_umiej.append(i)
 
     def obslugaBledow(self, tekst):
+        if str(tekst).find("ORA-02292") > -1:
+            app.infoBox("Błąd usuwania", "Próba usunięcia elementu, do którego odwołuje się inny element. Wskazany element"
+                                         " jest kluczem obcym innej relacji.", parent=None)
+            return -1
         if str(tekst).find("ORA-01917") > -1:
             app.infoBox("Błąd dodawania użytkownika", "Podany użytkownik nie istnieje.", parent=None)
             return -1
@@ -124,8 +129,14 @@ class window():
             app.enableMenuItem("Dodaj", "Dodaj Postać")
             app.enableMenuItem("Dodaj", "Dodaj Rasę")
             app.enableMenuItem("Dodaj", "Dodaj Kraj")
+            app.enableMenuItem("Usuń", "Usuń Postać")
+            app.enableMenuItem("Usuń", "Usuń Rasę")
+            app.enableMenuItem("Usuń", "Usuń Kraj")
             app.enableMenuItem("Umiejętności", "Nowa umiejętność")
             app.enableMenuItem("Umiejętności", "Dostępne umiejętności")
+            app.enableMenuItem("Umiejętności", "Usuń umiejętność")
+            app.enableMenuItem("Dodaj", "Dodaj Klasę")
+            app.enableMenuItem("Usuń", "Usuń Klasę")
             app.disableMenuItem("Połącz", "Login")
             app.setTabbedFrameDisableAllTabs("Start", disabled=False)
 
@@ -214,6 +225,23 @@ class window():
             self.obslugaBledow(e)
         app.destroySubWindow("Dodaj nowy kraj pochodzenia")
 
+    def sendClass(self):
+        klasa = app.getEntry("Nazwa klasy")
+        opis = app.getTextArea("Opis klasy")
+        try:
+            self.database.cursor().execute(
+                f"insert into inf141249.klasy values('{klasa}', '{opis}')")
+            self.database.cursor().execute("commit")
+            app.infoBox("Nowa klasa  ", "Nastąpiło poprawne dodanie klasy do bazy danych", parent=None)
+            self.lista_class.append(klasa)
+            app.changeOptionBox("Wybierz klasę", self.lista_class)
+            app.changeOptionBox("Klasa :", self.lista_class)
+            app.openTab("Start", self.lista_tab[1])
+            app.addTableRows("tabela_klas", [[klasa, opis]])
+        except Exception as e:
+            self.obslugaBledow(e)
+        app.destroySubWindow("Dodaj nową klasę")
+
     def sendEffect(self):
         nazwa = app.getEntry("Nazwa efektu :")
         opis = app.getTextArea("Opis efektu :")
@@ -243,6 +271,7 @@ class window():
             self.obslugaBledow(e)
 
     def sendSpell(self):
+        self.lista_class.remove("---------")
         nazwa = app.getEntry("Nazwa umiej.")
         poziom = app.getEntry("Poziom umiej.")
         opis = app.getTextArea("opis_umiej")
@@ -284,14 +313,15 @@ class window():
         pass
 
     def makeLogin(self):
+        try:
+            app.destroySubWindow("Logowanie")
+        except:
+            pass
         with app.subWindow('Logowanie', modal=True):
             app.emptyCurrentContainer()
             app.setResizable(canResize=False)
             app.showSubWindow("Logowanie")
             app.setBg("indianred")
-            # duma = app.addImage("dragon", "login.gif")
-            # app.setBgImage(duma)
-            # photo = ImageTk.PhotoImage(Image.open("login.gif"))
             app.setSize(400, 200)
             app.setSticky("new")
             app.addImage("smog", "goraLogin.gif")
@@ -316,8 +346,14 @@ class window():
         app.disableMenuItem("Dodaj", "Dodaj Kraj")
         app.disableMenuItem("Umiejętności", "Nowa umiejętność")
         app.disableMenuItem("Umiejętności", "Dostępne umiejętności")
+        app.disableMenuItem("Umiejętności", "Usuń umiejętność")
         app.disableMenuItem("Użytkownicy", "Dodaj użytkownika")
         app.disableMenuItem("Użytkownicy", "Usuń użytkownika")
+        app.disableMenuItem("Usuń", "Usuń Postać")
+        app.disableMenuItem("Usuń", "Usuń Rasę")
+        app.disableMenuItem("Usuń", "Usuń Kraj")
+        app.disableMenuItem("Dodaj", "Dodaj Klasę")
+        app.disableMenuItem("Usuń", "Usuń Klasę")
         self.database = None
         app.infoBox("Wylogowywanie", "Nastąpiło poprawne wylogowanie z Bazy Danych", parent=None)
 
@@ -393,9 +429,10 @@ class window():
 
             app.openTab("Start", self.lista_tab[4])
             app.setStretch('column')
-            app.setSticky('wen')
-            app.setSticky("news")
+            app.setSticky("wns")
             app.setPadding([20, 20])
+            app.addLabel("rasy_lista_bla", "~~Lista krajów pochodzeń~~", 4, 0)
+            app.setSticky("news")
             app.addTable("tabela_pochodzeń", klasyLista, wrap="700", row=5)
             klasyLista = []
             klasyDB = self.database.cursor().execute("select nazwa, opis_rasy, srd_dlugosc_zycia, "
@@ -408,7 +445,9 @@ class window():
                 for item in row:
                     tmp.append(item)
                 klasyLista.append(tmp)
-            app.setSticky("new")
+            app.setSticky("wns")
+            app.addLabel("kraje_lista_bla", "~~Lista dostępnych ras z ich efektami~~", 2, 0)
+            app.setSticky("nesw")
             app.addTable("tabela_pochodzeń1", klasyLista, wrap="500", colspan=3, row=3)
 
             app.stopTab()
@@ -436,6 +475,7 @@ class window():
             app.setSticky("news")
             app.setPadding([20, 20])
             app.addTable("tabela_klas", klasyLista, wrap="700", colspan=3)
+            #app.addDbTable("tabelka_wiiii", self.database, "inf141249.Postacie")
             app.stopTab()
 
     def loadCharacterData(self):
@@ -589,6 +629,10 @@ class window():
                     tmp.append(item)
                 umiejLista.append(tmp)
             self.tabOfAb += 1
+            try:
+                app.destroySubWindow("Umiejętność wybranej klasy")
+            except:
+                pass
             with app.subWindow("Umiejętność wybranej klasy", modal=True):
                 app.showSubWindow("Umiejętność wybranej klasy")
                 app.setSize(1280, 720)
@@ -603,6 +647,10 @@ class window():
 
     def createNewCharacterWindow(self):
         self.iterator += 1
+        try:
+            app.destroySubWindow("Dodaj nową postać")
+        except:
+            pass
         with app.subWindow("Dodaj nową postać", modal=True):
             app.showSubWindow("Dodaj nową postać")
             app.emptyCurrentContainer()
@@ -658,6 +706,10 @@ class window():
 
     def createNewRaceWindow(self):
         self.iterator += 1
+        try:
+            app.destroySubWindow("Dodaj nową rasę")
+        except:
+            pass
         with app.subWindow("Dodaj nową rasę", modal=True):
             app.showSubWindow("Dodaj nową rasę")
             app.emptyCurrentContainer()
@@ -692,6 +744,10 @@ class window():
 
     def createNewNationWindow(self):
         self.iterator += 1
+        try:
+            app.destroySubWindow("Dodaj nowy kraj pochodzenia")
+        except:
+            pass
         with app.subWindow("Dodaj nowy kraj pochodzenia", modal=True):
             app.showSubWindow("Dodaj nowy kraj pochodzenia")
             app.emptyCurrentContainer()
@@ -721,6 +777,10 @@ class window():
 
     def createNewUmiejetnosc(self):
         self.iterator += 1
+        try:
+            app.destroySubWindow("Dodaj nową umiejętność")
+        except:
+            pass
         with app.subWindow("Dodaj nową umiejętność", modal=True):
             app.showSubWindow("Dodaj nową umiejętność")
             app.emptyCurrentContainer()
@@ -757,6 +817,37 @@ class window():
             app.setPadding([0, 0])
             app.setSticky("nes")
             app.addImage(f"krolNowaUmiej{self.iterator}", "krol.gif", 1, 3, rowspan=50)
+
+    def createNewClassWindow(self):
+        try:
+            app.destroySubWindow("Dodaj nową klasę")
+        except:
+            pass
+        self.iterator += 1
+        with app.subWindow("Dodaj nową klasę", modal=True):
+            app.showSubWindow("Dodaj nową klasę")
+            app.emptyCurrentContainer()
+            app.setResizable(canResize=False)
+            app.setSize(1280, 760)
+            app.setBg(colour="beige", override=False)
+            app.setStretch("column")
+            app.setSticky("new")
+            app.addImage(f"nowarasatlo{self.iterator}", "dnd2.gif", colspan=4)
+            app.setSticky("w")
+            app.setPadding([20, 0])
+            app.addLabel("Dodawanie Klasy", "~~Dodawanie Klasy~~", 1, 0)
+            app.addLabel("puste30111", "", 1, 1)
+            app.addLabel("puste31111", "", 1, 2)
+            app.addLabelEntry("Nazwa klasy", 2, 0, colspan=2)
+            app.addLabel("KlasaDoWczytania", "Opis klasy", 3, 0)
+            app.setSticky("nwes")
+            app.addTextArea("Opis klasy", 4, 0, colspan=3, rowspan=4)
+            app.setSticky("e")
+            app.addButtons(['Dodaj klasę'], win.sendClass, 8, 2)
+
+            app.setPadding([0, 0])
+            app.setSticky("nes")
+            app.addImage(f"krol22{self.iterator}", "krol.gif", 1, 3, rowspan=30)
 
     def makeChooseCharacterForCheckingSpells(self):
         with app.subWindow('Wybór postaci', modal=True):
@@ -823,6 +914,10 @@ class window():
                 app.addTable(f"tabela_umiejetnosci_dla_klas {self.iterator}", umiejLista, wrap="500")
 
     def newUser(self):
+        try:
+            app.destroySubWindow("Nowy użytkownik bazy")
+        except:
+            pass
         with app.subWindow('Nowy użytkownik bazy', modal=True):
             app.emptyCurrentContainer()
             app.setResizable(canResize=False)
@@ -830,20 +925,20 @@ class window():
             app.setBg("indianred")
             app.setSize(400, 150)
             app.setSticky("new")
-            app.addImage("smogAA", "goraLogin.gif")
+            app.addImage("smogA22A", "goraLogin.gif")
 
             app.setPadding([20, 5])
             app.addLabelEntry("Nazwa użytkownika")
 
-            app.addButtons(["OK", "Cancel"], self.addUser)
+            app.addButtons(["~OK~", "~Cancel~"], self.addUser)
 
             app.setPadding([0, 0])
             app.setSticky("sew")
-            app.addImage("smogBB", "dolLogin.gif")
+            app.addImage("smogB22B", "dolLogin.gif")
 
     def addUser(self, button):
         user = app.getEntry("Nazwa użytkownika")
-        if button == "Cancel":
+        if button == "~Cancel~":
             app.destroySubWindow("Nowy użytkownik bazy")
         else:
             app.destroySubWindow("Nowy użytkownik bazy")
@@ -854,6 +949,10 @@ class window():
                 self.obslugaBledow(e)
 
     def findUser(self):
+        try:
+            app.destroySubWindow("Usuń użytkownika bazy")
+        except:
+            pass
         with app.subWindow('Usuń użytkownika bazy', modal=True):
             app.emptyCurrentContainer()
             app.setResizable(canResize=False)
@@ -861,20 +960,20 @@ class window():
             app.setBg("indianred")
             app.setSize(400, 150)
             app.setSticky("new")
-            app.addImage("smogAA", "goraLogin.gif")
+            app.addImage("smogA3121A", "goraLogin.gif")
 
             app.setPadding([20, 5])
-            app.addLabelEntry("Nazwa użytkownika")
+            app.addLabelEntry("Nazwa użytkownika ")
 
-            app.addButtons(["OK", "Cancel"], self.delUser)
+            app.addButtons(["-OK-", "-Cancel-"], self.delUser)
 
             app.setPadding([0, 0])
             app.setSticky("sew")
-            app.addImage("smogBB", "dolLogin.gif")
+            app.addImage("smog1123BB", "dolLogin.gif")
 
     def delUser(self, button):
-        user = app.getEntry("Nazwa użytkownika")
-        if button == "Cancel":
+        user = app.getEntry("Nazwa użytkownika ")
+        if button == "-Cancel-":
             app.destroySubWindow("Usuń użytkownika bazy")
         else:
             app.destroySubWindow("Usuń użytkownika bazy")
@@ -882,6 +981,257 @@ class window():
                 self.database.cursor().execute(f"grant uzyt_bazy_rpg to {user}")
                 app.infoBox("Usunięto użytkownika", f"Poprawnie usunięto użytkownika: {user}", parent=None)
             except Exception as e:
+                self.obslugaBledow(e)
+
+    def usunPostac(self):
+        try:
+            app.destroySubWindow("Usuwanie postaci")
+        except:
+            pass
+        with app.subWindow('Usuwanie postaci', modal=True):
+            app.emptyCurrentContainer()
+            app.setResizable(canResize=False)
+            app.showSubWindow('Usuwanie postaci')
+            app.setBg("indianred")
+            app.setSize(400, 200)
+            app.setSticky("new")
+            app.addImage("smogAAA", "goraLogin.gif")
+
+            app.setPadding([20, 5])
+            app.addLabelOptionBox("Usuń postać :", self.lista_postaci)
+
+            app.addButtons(["Choose ", "Cancel "], self.deletePostac)
+
+            app.setPadding([0, 0])
+            app.setSticky("sew")
+            app.addImage("smogBBB", "dolLogin.gif")
+
+
+    def deletePostac(self, button):
+        user = app.getOptionBox("Usuń postać :")
+        if button == "Cancel ":
+            app.destroySubWindow('Usuwanie postaci')
+        else:
+            app.destroySubWindow('Usuwanie postaci')
+            try:
+                self.database.cursor().execute(f"delete from inf141249.postacie where nazwa_postaci = '{user}'")
+                self.database.cursor().execute("commit")
+                self.lista_postaci.remove(user)
+                app.changeOptionBox("Lista postaci : ", self.lista_postaci)
+                app.infoBox("Usunięto kartę postaci", f"Poprawnie usunięto kartę postaci: {user}", parent=None)
+            except Exception as e:
+                print(e)
+                self.obslugaBledow(e)
+
+    def usunRase(self):
+        try:
+            app.destroySubWindow("Usuwanie rasy")
+        except:
+            pass
+        with app.subWindow('Usuwanie rasy', modal=True):
+            app.emptyCurrentContainer()
+            app.setResizable(canResize=False)
+            app.showSubWindow('Usuwanie rasy')
+            app.setBg("indianred")
+            app.setSize(400, 200)
+            app.setSticky("new")
+            app.addImage("smogAAAA", "goraLogin.gif")
+
+            app.setPadding([20, 5])
+            app.addLabelOptionBox("Usuń rasę :", self.lista_races)
+
+            app.addButtons(["Choose  ", "Cancel  "], self.deleteRase)
+
+            app.setPadding([0, 0])
+            app.setSticky("sew")
+            app.addImage("smogBBBB", "dolLogin.gif")
+
+
+    def deleteRase(self, button):
+        race = app.getOptionBox("Usuń rasę :")
+        if button == "Cancel  ":
+            app.destroySubWindow('Usuwanie rasy')
+        else:
+            app.destroySubWindow('Usuwanie rasy')
+            try:
+                self.database.cursor().execute(f"delete from inf141249.rasy where nazwa = '{race}'")
+                self.database.cursor().execute("commit")
+                self.lista_races.remove(race)
+                app.changeOptionBox("Lista ras : ", self.lista_races)
+                app.changeOptionBox("Rasa :", self.lista_races)
+                klasyLista = []
+                klasyDB = self.database.cursor().execute("select nazwa, opis_rasy, srd_dlugosc_zycia, "
+                                                         "p_d, nazwa_dodatku, nazwa_jezyka, e.nazwa_efektu, opis_efektu, statystyka, "
+                                                         "wartosc_wzm from inf141249.rasy r inner join inf141249.efekty_rasowe e on r.nazwa_efektu = e.nazwa_efektu")
+                tmp = ['NAZWA', 'OPIS RASY', 'WIEK', 'POD/DOD', 'DODATEK', 'JĘZYK', 'EFEKT', 'OPIS EFEKTU',
+                       'STATYSTYKA', 'WARTOŚĆ']
+                klasyLista.append(tmp)
+                for row in klasyDB:
+                    tmp = []
+                    for item in row:
+                        tmp.append(item)
+                    klasyLista.append(tmp)
+                app.replaceAllTableRows("tabela_pochodzeń1", klasyLista, deleteHeader=True)
+                app.infoBox("Usunięto rasę", f"Poprawnie usunięto rasę: {race} z bazy danych", parent=None)
+            except Exception as e:
+                self.obslugaBledow(e)
+
+    def usunKraj(self):
+        try:
+            app.destroySubWindow("Usuwanie kraju")
+        except:
+            pass
+        with app.subWindow('Usuwanie kraju', modal=True):
+            app.emptyCurrentContainer()
+            app.setResizable(canResize=False)
+            app.showSubWindow('Usuwanie kraju')
+            app.setBg("indianred")
+            app.setSize(400, 200)
+            app.setSticky("new")
+            app.addImage("smogAAAAA", "goraLogin.gif")
+
+            app.setPadding([20, 5])
+            app.addLabelOptionBox("Usuń kraj :", self.lista_krajow)
+
+            app.addButtons(["Choose   ", "Cancel   "], self.deleteKraj)
+
+            app.setPadding([0, 0])
+            app.setSticky("sew")
+            app.addImage("smogBBBBB", "dolLogin.gif")
+
+
+    def deleteKraj(self, button):
+        kraj = app.getOptionBox("Usuń kraj :")
+        if button == "Cancel   ":
+            app.destroySubWindow('Usuwanie kraju')
+        else:
+            app.destroySubWindow('Usuwanie kraju')
+            try:
+                self.database.cursor().execute(f"delete from inf141249.kraje_pochodzenia where nazwa = '{kraj}'")
+                self.database.cursor().execute("commit")
+                self.lista_krajow.remove(kraj)
+                app.changeOptionBox("Kraj :", self.lista_krajow)
+                app.changeOptionBox("Lista Krajów pochodzenia : ", self.lista_krajow)
+                klasyLista = []
+                klasyDB = self.database.cursor().execute('select * from inf141249.kraje_pochodzenia')
+                tmp = ['NAZWA', 'STOLICA', 'JĘZYK URZĘDOWY', 'STRONA KONFLIKTU']
+                klasyLista.append(tmp)
+                for row in klasyDB:
+                    tmp = []
+                    for item in row:
+                        tmp.append(item)
+                    klasyLista.append(tmp)
+                app.replaceAllTableRows("tabela_pochodzeń", klasyLista, deleteHeader=True)
+                app.infoBox("Usunięto kraj", f"Poprawnie usunięto kraj: {kraj} z bazy danych", parent=None)
+            except Exception as e:
+                self.obslugaBledow(e)
+
+    def usunKlasa(self):
+        try:
+            app.destroySubWindow("Usuwanie klasy")
+        except:
+            pass
+        with app.subWindow('Usuwanie klasy', modal=True):
+            app.emptyCurrentContainer()
+            app.setResizable(canResize=False)
+            app.showSubWindow('Usuwanie klasy')
+            app.setBg("indianred")
+            app.setSize(400, 200)
+            app.setSticky("new")
+            app.addImage("smogAAAAAA", "goraLogin.gif")
+
+            app.setPadding([20, 5])
+            app.addLabelOptionBox("Usuń klasę :", self.lista_class)
+
+            app.addButtons([" Choose", " Cancel"], self.deleteKlasa)
+
+            app.setPadding([0, 0])
+            app.setSticky("sew")
+            app.addImage("smogBBBBBB", "dolLogin.gif")
+
+
+    def deleteKlasa(self, button):
+        klasa = app.getOptionBox("Usuń klasę :")
+        if button == " Cancel":
+            app.destroySubWindow('Usuwanie klasy')
+        else:
+            app.destroySubWindow('Usuwanie klasy')
+            try:
+                self.database.cursor().execute(f"delete from inf141249.klasy where nazwa = '{klasa}'")
+                self.database.cursor().execute("commit")
+                self.lista_class.remove(klasa)
+                print(self.lista_class)
+                app.changeOptionBox("Wybierz klasę", self.lista_class)
+                app.changeOptionBox("Klasa :", self.lista_class)
+
+                klasy = []
+                klasyDB = self.database.cursor().execute('select * from inf141249.klasy')
+                tmp = ['NAZWA', 'OPIS KLASY']
+                klasy.append(tmp)
+                for row in klasyDB:
+                    tmp = []
+                    for item in row:
+                        tmp.append(item)
+                    klasy.append(tmp)
+
+                app.replaceAllTableRows("tabela_klas", klasy, deleteHeader=True)
+                app.infoBox("Usunięto klasę", f"Poprawnie usunięto klasę: {klasa} z bazy danych", parent=None)
+            except Exception as e:
+                print(e)
+                self.obslugaBledow(e)
+
+    def usunUmiejetnosc(self):
+        try:
+            app.destroySubWindow("Usuwanie umiejętności")
+        except:
+            pass
+        with app.subWindow('Usuwanie umiejętności', modal=True):
+            app.emptyCurrentContainer()
+            app.setResizable(canResize=False)
+            app.showSubWindow('Usuwanie umiejętności')
+            app.setBg("indianred")
+            app.setSize(400, 200)
+            app.setSticky("new")
+            app.addImage("smogAAAVAAA", "goraLogin.gif")
+
+
+
+            umiej = []
+            klasyDB = self.database.cursor().execute(f"select distinct(nazwa) from inf141249.umiejetnosci")
+            for row in klasyDB:
+                tmp = []
+                for item in row:
+                    tmp.append(item)
+                a = tmp[0].replace('\n', '')
+                if a[-1] == " ":
+                    a = a[:len(a) - 1]
+                if a not in umiej:
+                    umiej.append(a)
+
+            app.setPadding([20, 5])
+            app.addLabelOptionBox("Wybierz umiejętność :", umiej)
+
+            app.addButtons(["=Choose=", "=Cancel="], self.delUmiejetnosc)
+
+            app.setPadding([0, 0])
+            app.setSticky("sew")
+            app.addImage("smogBVBBBBB", "dolLogin.gif")
+
+
+    def delUmiejetnosc(self, button):
+        umiej = app.getOptionBox("Wybierz umiejętność :")
+        if button == "=Cancel=":
+            app.destroySubWindow('Usuwanie umiejętności')
+        else:
+            app.destroySubWindow('Usuwanie umiejętności')
+            try:
+                self.database.cursor().execute(f"delete from inf141249.umiejetnoscidlaklas where "
+                                               f" umiejetnosc = '{umiej}'")
+                self.database.cursor().execute(f"delete from inf141249.umiejetnosci where nazwa = '{umiej}'")
+                #self.database.cursor().execute("commit")
+                app.infoBox("Usunięto umiejętność", f"Poprawnie usunięto umiejętność: {umiej} z bazy danych", parent=None)
+            except Exception as e:
+                print(e)
                 self.obslugaBledow(e)
 
 
@@ -892,19 +1242,27 @@ if __name__ == "__main__":
         app.setResizable(canResize=True)
         app.setSize(1280, 880)
         fileMenu = ["Login", "Log Out"]
-        fileMenu2 = ["Dodaj Postać", "Dodaj Rasę", "Dodaj Kraj"]
-        fileMenu3 = ["Nowa umiejętność", "Dostępne umiejętności"]
+        fileMenu2 = ["Dodaj Postać", "Dodaj Rasę", "Dodaj Kraj", "Dodaj Klasę"]
+        fileMenu3 = ["Nowa umiejętność", "Dostępne umiejętności", "Usuń umiejętność"]
         fileMenu4 = ["Dodaj użytkownika", "Usuń użytkownika"]
+        fileMenu5 = ["Usuń Postać", "Usuń Rasę", "Usuń Kraj", "Usuń Klasę"]
         app.addMenuList("Połącz", fileMenu, [win.makeLogin, win.makeLogOut])
-        app.addMenuList("Dodaj", fileMenu2, [win.createNewCharacterWindow, win.createNewRaceWindow, win.createNewNationWindow])
-        app.addMenuList("Umiejętności", fileMenu3, [win.createNewUmiejetnosc, win.makeChooseCharacterForCheckingSpells])
+        app.addMenuList("Dodaj", fileMenu2, [win.createNewCharacterWindow, win.createNewRaceWindow, win.createNewNationWindow, win.createNewClassWindow])
+        app.addMenuList("Usuń", fileMenu5, [win.usunPostac, win.usunRase, win.usunKraj, win.usunKlasa])
+        app.addMenuList("Umiejętności", fileMenu3, [win.createNewUmiejetnosc, win.makeChooseCharacterForCheckingSpells, win.usunUmiejetnosc])
         app.addMenuList("Użytkownicy", fileMenu4, [win.newUser, win.findUser])
         app.disableMenuItem("Połącz", "Log Out")
         app.disableMenuItem("Dodaj", "Dodaj Postać")
         app.disableMenuItem("Dodaj", "Dodaj Rasę")
         app.disableMenuItem("Dodaj", "Dodaj Kraj")
+        app.disableMenuItem("Usuń", "Usuń Postać")
+        app.disableMenuItem("Usuń", "Usuń Rasę")
+        app.disableMenuItem("Usuń", "Usuń Kraj")
+        app.disableMenuItem("Dodaj", "Dodaj Klasę")
+        app.disableMenuItem("Usuń", "Usuń Klasę")
         app.disableMenuItem("Umiejętności", "Nowa umiejętność")
         app.disableMenuItem("Umiejętności", "Dostępne umiejętności")
+        app.disableMenuItem("Umiejętności", "Usuń umiejętność")
         app.disableMenuItem("Użytkownicy", "Dodaj użytkownika")
         app.disableMenuItem("Użytkownicy", "Usuń użytkownika")
         app.startTabbedFrame("Start")
@@ -997,8 +1355,6 @@ if __name__ == "__main__":
 
         app.registerEvent(win.createTableOfClass)
         app.registerEvent(win.createTableOfPochodzenie)
-        # app.addLabel("loop", "New Row", app.getRow(), 0)
-        # app.addButtons(["Show Classes"], win.createTableOfClass)
         app.stopTab()
 
         #TAG TRZECI---------------------------------------------------------------------------------------------------
@@ -1021,7 +1377,7 @@ if __name__ == "__main__":
         app.setSticky("w")
         app.addLabel("Edytowanie Rasy :", "~~Edytowanie Rasy~~", 3, 0)
         app.addLabel("pusty91", "                            ", 3, 2)
-        #app.addLabelEntry("Nazwa rasy :", 4, 0, colspan=3)
+
         app.addLabel("RasaDoWczytania2", "Opis rasy :", 4, 0)
         app.setSticky("nwes")
         app.addTextArea("Opis rasy :", 5, 0, colspan=2, rowspan=4)
@@ -1084,7 +1440,6 @@ if __name__ == "__main__":
 
         app.addLabel("Edytowanie Kraju pochodzenia :", "~~Edytowanie Kraju pochodzenia~~", 3, 0)
 
-        #app.addLabelEntry("Nazwa Kraju pochodzenia :", 4, 0)
         app.addLabelEntry("Stolica :", 4, 0)
         app.addLabelOptionBox("Strona konfliktu :", win.lista_stron_kon, 5, 0)
         app.addLabelOptionBox("Język urzędowy :", win.lista_jezykow, 6, 0)
@@ -1113,7 +1468,3 @@ if __name__ == "__main__":
         app.setTabbedFrameBg("Start", "darkred")
 
         app.setTabbedFrameDisableAllTabs("Start", disabled=True)
-        # app.setTabBg(title = "Start", tab = win.lista_tab[0], colour="darkred")
-        # app.buttons(['LOGIN', 'EXIT'], win.login)
-        # app.registerEvent(win.createDB)
-        # app.setTabbedFrameSelectedTab("Start", "2")
