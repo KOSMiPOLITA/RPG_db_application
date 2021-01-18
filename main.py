@@ -18,14 +18,17 @@ class window():
         self.createdInt3 = 1
         self.tabOfAb = 1
         self.createdPostacie = 1
+        self.createdInt4 = 1
         self.createdRace = 1
         self.lista_krajow = ["-----------"]
         self.createdKraj = 1
         self.lista_class = ["---------"]
+        self.lista_class_umiej = ["-----------"]
         self.lista_races = ["---------"]
         self.lista_jezykow = ["---------"]
         self.lista_efektow = ["--------------------"]
         self.lista_stron_kon = ["------------"]
+        self.lista_czarow = ["------------"]
         self.EfektAndJezyk = 1
         self.createdStrony = 1
         self.canLoadEffect = 1
@@ -39,7 +42,7 @@ class window():
         self.lista_wartosci = [1, 2, 3]
         for i in range(21):
             self.lista_stat.append(i)
-        self.lista_tab = ["Karty Postaci", "Lista klas", "Rasy & Efekty", "Kraje pochodzenia", "Lista Ras i Krajów"]
+        self.lista_tab = ["Karty Postaci", "Lista klas", "Rasy & Efekty", "Kraje pochodzenia", "Lista Ras i Krajów", "Modyfikuj Umiejętności"]
         for t in range(len(self.lista_tab)):
             tmp = ""
             n = len(max(self.lista_tab)) - len(self.lista_tab[t])
@@ -48,11 +51,17 @@ class window():
                 n -= 1
             self.lista_tab[t] = self.lista_tab[t] + tmp
         self.lista_postaci = ["---------"]
-        self.lista_war_umiej = ["-"]
+        self.lista_war_umiej = []
         for i in range(51):
             self.lista_war_umiej.append(i)
+        self.lista_war_umiej.append('~')
 
     def obslugaBledow(self, tekst):
+        if str(tekst).find("ORA-12170") > -1:
+            app.infoBox("Problem z połączeniem",
+                        "Przekroczono czas logowania do bazy danych. Sprawdź połączenie internetowe"
+                        " lub skonfiguruj ustawienia VPN.", parent=None)
+            return -1
         if str(tekst).find("ORA-02292") > -1:
             app.infoBox("Błąd usuwania", "Próba usunięcia elementu, do którego odwołuje się inny element. Wskazany element"
                                          " jest kluczem obcym innej relacji.", parent=None)
@@ -135,6 +144,7 @@ class window():
             app.enableMenuItem("Umiejętności", "Nowa umiejętność")
             app.enableMenuItem("Umiejętności", "Dostępne umiejętności")
             app.enableMenuItem("Umiejętności", "Usuń umiejętność")
+            #app.enableMenuItem("Umiejętności", "Modyfikuj umiejętność")
             app.enableMenuItem("Dodaj", "Dodaj Klasę")
             app.enableMenuItem("Usuń", "Usuń Klasę")
             app.disableMenuItem("Połącz", "Login")
@@ -172,14 +182,14 @@ class window():
             self.database.cursor().execute("commit")
             app.infoBox("Nowa Postać   ", "Nastąpiło poprawne dodanie postaci do bazy danych", parent=None)
             self.lista_postaci.append(nazwa)
-            app.changeOptionBox("Lista postaci : ", self.lista_postaci)
+            app.changeAutoEntry("Lista postaci : ", self.lista_postaci)
         except Exception as e:
             self.obslugaBledow(e)
         app.destroySubWindow("Dodaj nową postać")
 
     def sendRace(self):
         nazwa = app.getEntry("Nazwa rasy")
-        opis = app.getTextArea("Opis rasy")
+        opis = (app.getTextArea("Opis rasy")).replace("'", "`")
         srd = app.getEntry("Długość życia")
         pd = app.getOptionBox("Pod / Dod")
         dodatek = app.getEntry("Dodatek rasy")
@@ -227,7 +237,7 @@ class window():
 
     def sendClass(self):
         klasa = app.getEntry("Nazwa klasy")
-        opis = app.getTextArea("Opis klasy")
+        opis = (app.getTextArea("Opis klasy")).replace("'", "`")
         try:
             self.database.cursor().execute(
                 f"insert into inf141249.klasy values('{klasa}', '{opis}')")
@@ -244,7 +254,7 @@ class window():
 
     def sendEffect(self):
         nazwa = app.getEntry("Nazwa efektu :")
-        opis = app.getTextArea("Opis efektu :")
+        opis = (app.getTextArea("Opis efektu :")).replace("'", "`")
         stat = app.getOptionBox("Stat :")
         wart = app.getOptionBox("Wartość :")
         try:
@@ -256,6 +266,10 @@ class window():
             app.changeOptionBox("Efekt rasy :", self.lista_efektow)
         except Exception as e:
             self.obslugaBledow(e)
+        app.setEntry("Nazwa efektu :", "")
+        app.clearTextArea("Opis efektu :", callFunction=True)
+        app.setOptionBox("Stat :", None)
+        app.setOptionBox("Wartość :", None)
 
     def sendJezyk(self):
         nazwa = app.getEntry("Nazwa nowego języka :")
@@ -269,44 +283,55 @@ class window():
             app.changeOptionBox("Język urzędowy :", self.lista_jezykow)
         except Exception as e:
             self.obslugaBledow(e)
+        app.setEntry("Nazwa nowego języka :", "")
 
     def sendSpell(self):
         self.lista_class.remove("---------")
         nazwa = app.getEntry("Nazwa umiej.")
-        poziom = app.getEntry("Poziom umiej.")
-        opis = app.getTextArea("opis_umiej")
+        nazwa = nazwa.replace('\n', '')
+        poziom = app.getOptionBox("Poziom umiej.")
+        opis = (app.getTextArea("opis_umiej")).replace("'", "`")
         dmg = app.getOptionBox("DMG")
         heal = app.getOptionBox("HEAL")
         defe = app.getOptionBox("DEF")
         pd = app.getOptionBox("P_D")
         dodatek = app.getEntry("Dodatek")
         lista = []
-        lista.append(app.getOptionBox("Klasa 1st"))
-        lista.append(app.getOptionBox("Klasa 2nd"))
-        lista.append(app.getOptionBox("Klasa 3rd"))
-        lista.append(app.getOptionBox("Klasa 4th"))
-        lista.append(app.getOptionBox("Klasa 5th"))
+        lista.append(app.getOptionBox("1st"))
+        lista.append(app.getOptionBox("2nd"))
+        lista.append(app.getOptionBox("3rd"))
+        lista.append(app.getOptionBox("4th"))
+        lista.append(app.getOptionBox("5th"))
         lista_ost = []
         for i in lista:
             if i is not None and i != "---------" and i not in lista_ost:
                 lista_ost.append(i)
-        if dmg is None:
-            dmg = "NULL"
-        if heal is None:
-            heal = "NULL"
-        if defe is None:
-            defe = "NULL"
-        try:
-            self.database.cursor().execute(
-                f"insert into inf141249.umiejetnosci values('{nazwa}', '{opis}', {poziom}, "
-                f"{dmg}, {heal}, {defe}, '{pd}', '{dodatek}')")
-            for row in lista_ost:
+        if len(lista_ost) > 0:
+            if dmg is None:
+                dmg = "NULL"
+            if heal is None:
+                heal = "NULL"
+            if defe is None:
+                defe = "NULL"
+            try:
                 self.database.cursor().execute(
-                    f"insert into inf141249.umiejetnoscidlaklas values ('{row}', '{nazwa}')")
-            self.database.cursor().execute("commit")
-            app.infoBox("Nowa umiejętność", "Nastąpiło poprawne dodanie umiejętności do bazy danych", parent=None)
-        except Exception as e:
-            self.obslugaBledow(e)
+                    f"insert into inf141249.umiejetnosci values('{nazwa}', '{opis}', {poziom}, "
+                    f"{dmg}, {heal}, {defe}, '{pd}', '{dodatek}')")
+                for row in lista_ost:
+                    self.database.cursor().execute(
+                        f"insert into inf141249.umiejetnoscidlaklas values ('{row}', '{nazwa}')")
+                self.database.cursor().execute("commit")
+                try:
+                    self.lista_czarow.remove("--------")
+                except:
+                    pass
+                self.lista_czarow.append(nazwa)
+                app.changeAutoEntry("Umiej.:", self.lista_czarow)
+                app.infoBox("Nowa umiejętność", "Nastąpiło poprawne dodanie umiejętności do bazy danych.", parent=None)
+            except Exception as e:
+                self.obslugaBledow(e)
+        else:
+            app.infoBox("Błąd", "Próba dodania umiejętności nie przypisanej do żadnej klasy.", parent=None)
         app.destroySubWindow("Dodaj nową umiejętność")
 
     def doNothing(self):
@@ -347,6 +372,7 @@ class window():
         app.disableMenuItem("Umiejętności", "Nowa umiejętność")
         app.disableMenuItem("Umiejętności", "Dostępne umiejętności")
         app.disableMenuItem("Umiejętności", "Usuń umiejętność")
+        #app.disableMenuItem("Umiejętności", "Modyfikuj umiejętność")
         app.disableMenuItem("Użytkownicy", "Dodaj użytkownika")
         app.disableMenuItem("Użytkownicy", "Usuń użytkownika")
         app.disableMenuItem("Usuń", "Usuń Postać")
@@ -376,7 +402,7 @@ class window():
             for row in postacieDB:
                 self.lista_postaci.append(row[1])
                 self.postacie_index.append([row[0], row[1]])
-            app.changeOptionBox("Lista postaci : ", self.lista_postaci)
+            app.changeAutoEntry("Lista postaci : ", self.lista_postaci)
 
     def createTableOfEfektAndJezyk(self):
         if self.database is not None and self.EfektAndJezyk == 1:
@@ -456,13 +482,16 @@ class window():
         if self.database is not None and self.createdInt == 1:
             self.lista_class = []
             self.createdInt = 0
+            self.lista_class_umiej = []
             klasyLista = []
             klasyDB = self.database.cursor().execute('select * from inf141249.klasy')
             tmp = ['NAZWA', 'OPIS KLASY']
             klasyLista.append(tmp)
+            self.lista_class_umiej.append('~~~~~~~~')
             for row in klasyDB:
                 tmp = []
                 self.lista_class.append(row[0])
+                self.lista_class_umiej.append(row[0])
                 for item in row:
                     tmp.append(item)
                 klasyLista.append(tmp)
@@ -477,46 +506,171 @@ class window():
             app.addTable("tabela_klas", klasyLista, wrap="700", colspan=3)
             #app.addDbTable("tabelka_wiiii", self.database, "inf141249.Postacie")
             app.stopTab()
+            app.changeOptionBox("1st ", win.lista_class_umiej)
+            app.changeOptionBox("2nd ", win.lista_class_umiej)
+            app.changeOptionBox("3rd ", win.lista_class_umiej)
+            app.changeOptionBox("4th ", win.lista_class_umiej)
+            app.changeOptionBox("5th ", win.lista_class_umiej)
+
+    def createTableOfSpells(self):
+        if self.database is not None and self.createdInt4 == 1:
+            self.createdInt4 = 0
+            umiej = []
+            klasyDB = self.database.cursor().execute(f"select distinct(nazwa) from inf141249.umiejetnosci")
+            for row in klasyDB:
+                tmp = []
+                for item in row:
+                    tmp.append(item)
+                a = tmp[0]
+                if a not in umiej:
+                    umiej.append(a)
+            self.lista_czarow = umiej
+            if len(self.lista_czarow) == 0:
+                self.lista_czarow.append("--------")
+            app.changeAutoEntry("Umiej.:", self.lista_czarow)
+
+
+
+    def loadUmiejData(self):
+        if self.database is not None and self.canLoad == 1:
+            umiejetnosc = app.getEntry("Umiej.:")
+            umiejDB = self.database.cursor().execute(
+                f"select * from inf141249.umiejetnosci where nazwa = '{umiejetnosc}'")
+            for row in umiejDB:
+                umiejDB = row
+            try:
+                if umiejDB[3] == 'NULL':
+                    dmg = '~'
+                if umiejDB[4] == 'NULL':
+                    heal = '~'
+                if umiejDB[5] == 'NULL':
+                    defe = '~'
+                #app.setOptionBox("Umiej.:", umiejDB[0])
+                app.setOptionBox("Poziom :", umiejDB[2])
+                app.clearTextArea("opis_umiej1", callFunction=True)
+                app.setTextArea("opis_umiej1", umiejDB[1])
+                app.setOptionBox("DMG ", umiejDB[3])
+                app.setOptionBox("HEAL ", umiejDB[4])
+                app.setOptionBox("DEF ", umiejDB[5])
+                app.setOptionBox("P_D ", umiejDB[6])
+                app.setEntry("Dodatek ", umiejDB[7])
+                umiej = []
+                umiejDB = self.database.cursor().execute(
+                    f"select klasa from inf141249.umiejetnoscidlaklas where umiejetnosc = '{umiejetnosc}'")
+                for row in umiejDB:
+                    umiej.append(row[0])
+                klasyLista = ["1st ", "2nd ", "3rd ", "4th ", "5th "]
+                for i in range(5):
+                    if i < len(umiej):
+                        app.setOptionBox(klasyLista[i], umiej[i])
+                    else:
+                        app.setOptionBox(klasyLista[i], "~~~~~~~~")
+            except:
+                app.infoBox("Brak danych", "Próba odczytania danych, które nie istnieją.", parent=None)
+
+
+
+    def editUmiejData(self):
+        nazwa = app.getEntry("Umiej.:")
+        poziom = app.getOptionBox("Poziom :")
+        opis = (app.getTextArea("opis_umiej1")).replace("'", "`")
+        dmg = app.getOptionBox("DMG ")
+        heal = app.getOptionBox("HEAL ")
+        defe = app.getOptionBox("DEF ")
+        if dmg == '~':
+            dmg = 'NULL'
+        if heal == '~':
+            heal = 'NULL'
+        if defe == '~':
+            defe = 'NULL'
+        pd = app.getOptionBox("P_D ")
+        dodatek = app.getEntry("Dodatek ")
+        if dodatek == None:
+            dodatek = 'NULL'
+        klasy = []
+        klasy.append(app.getOptionBox("1st "))
+        klasy.append(app.getOptionBox("2nd "))
+        klasy.append(app.getOptionBox("3rd "))
+        klasy.append(app.getOptionBox("4th "))
+        klasy.append(app.getOptionBox("5th "))
+
+        klasy2 = []
+        for i in range(5):
+            if klasy[i] not in klasy2 and klasy[i] != "~~~~~~~~":
+                klasy2.append(klasy[i])
+
+        if len(klasy2) > 0:
+            try:
+                self.database.cursor().execute(
+                    f"delete inf141249.umiejetnoscidlaklas where umiejetnosc = '{nazwa}' ")
+                for i in klasy2:
+                    self.database.cursor().execute(
+                            f"insert into inf141249.umiejetnoscidlaklas values('{i}', '{nazwa}') ")
+                self.database.cursor().execute(
+                    f"update inf141249.umiejetnosci set opis_umiejetnosci = '{opis}', poziom = '{poziom}', "
+                    f"dmg = {dmg}, heal = {heal}, def = {defe}, p_d = '{pd}', nazwa_dodatku = '{dodatek}' "
+                    f"where nazwa = '{nazwa}'")
+                self.database.cursor().execute("commit")
+                app.infoBox("Zmień dane", "Dane wskazanej umiejętności zostały poprawnie zmienione", parent=None)
+            except Exception as e:
+                print(e)
+                self.obslugaBledow(e)
+        else:
+            app.infoBox("Błąd", "Próba dodania umiejętności nie przypisanej do żadnej klasy "
+                                "lub edycji nieistniejącej umiejętności.", parent=None)
+        app.setOptionBox("Poziom :", None)
+        app.clearTextArea("opis_umiej1", callFunction=True)
+        app.setOptionBox("DMG ", None)
+        app.setOptionBox("HEAL ", None)
+        app.setOptionBox("DEF ", None)
+        app.setOptionBox("P_D ", None)
+        app.setEntry("Dodatek ", "")
+        klasyLista = ["1st ", "2nd ", "3rd ", "4th ", "5th "]
+        for i in range(5):
+            app.setOptionBox(klasyLista[i], "~~~~~~~~")
 
     def loadCharacterData(self):
         if self.database is not None and self.canLoad == 1:
-            character = app.getOptionBox("Lista postaci : ")
-            postacDB = self.database.cursor().execute(f"select * from inf141249.postacie where nazwa_postaci = '{character}'")
-            for row in postacDB:
-                postacDB = row
-            app.setEntry("Nazwa :", postacDB[1])
-            app.setOptionBox("Level Postaci :", postacDB[2])
-            app.setOptionBox("Płeć :", postacDB[6])
+            try:
+                character = app.getEntry("Lista postaci : ")
+                postacDB = self.database.cursor().execute(f"select * from inf141249.postacie where nazwa_postaci = '{character}'")
+                for row in postacDB:
+                    postacDB = row
+                app.setEntry("Nazwa :", postacDB[1])
+                app.setOptionBox("Level Postaci :", postacDB[2])
+                app.setOptionBox("Płeć :", postacDB[6])
 
-            app.setOptionBox("Rasa :", postacDB[18])
-            app.setOptionBox("Kraj :", postacDB[19])
-            app.setOptionBox("Klasa :", postacDB[20])
+                app.setOptionBox("Rasa :", postacDB[18])
+                app.setOptionBox("Kraj :", postacDB[19])
+                app.setOptionBox("Klasa :", postacDB[20])
 
-            app.setEntry("Wiek :", postacDB[3])
-            app.setEntry("Wzrost :", postacDB[4])
-            app.setEntry("Waga :", postacDB[5])
+                app.setEntry("Wiek :", postacDB[3])
+                app.setEntry("Wzrost :", postacDB[4])
+                app.setEntry("Waga :", postacDB[5])
 
-            app.setEntry("Kolor skóry :", postacDB[7])
-            app.setEntry("Kolor włosów :", postacDB[8])
-            app.setEntry("Kolor oczu :", postacDB[9])
+                app.setEntry("Kolor skóry :", postacDB[7])
+                app.setEntry("Kolor włosów :", postacDB[8])
+                app.setEntry("Kolor oczu :", postacDB[9])
 
-            app.setSticky("e")
-            app.setEntry("HP :", postacDB[10])
-            app.setSticky("w")
-            app.setEntry("STA :", postacDB[11])
-            app.setSticky("w")
-            # app.addLabelEntry("Plik z avatarem", 7, 1, colspan=2)
+                app.setSticky("e")
+                app.setEntry("HP :", postacDB[10])
+                app.setSticky("w")
+                app.setEntry("STA :", postacDB[11])
+                app.setSticky("w")
+                # app.addLabelEntry("Plik z avatarem", 7, 1, colspan=2)
 
-            app.setSticky("e")
-            app.setOptionBox("STR :", postacDB[12])
-            app.setOptionBox("DEX :", postacDB[13])
-            app.setOptionBox("CON :", postacDB[14])
-            app.setOptionBox("INT :", postacDB[15])
-            app.setOptionBox("WIS :", postacDB[16])
-            app.setOptionBox("CHA :", postacDB[17])
+                app.setSticky("e")
+                app.setOptionBox("STR :", postacDB[12])
+                app.setOptionBox("DEX :", postacDB[13])
+                app.setOptionBox("CON :", postacDB[14])
+                app.setOptionBox("INT :", postacDB[15])
+                app.setOptionBox("WIS :", postacDB[16])
+                app.setOptionBox("CHA :", postacDB[17])
+            except:
+                app.infoBox("Brak danych", "Próba odczytania danych, które nie istnieją.", parent=None)
 
     def editCharachterData(self):
-        postac = app.getOptionBox("Lista postaci : ")
+        postac = app.getEntry("Lista postaci : ")
         nazwa = app.getEntry("Nazwa :")
         levela = app.getOptionBox("Level Postaci :")
         plec = app.getOptionBox("Płeć :")
@@ -546,11 +700,39 @@ class window():
             for pse in range(len(self.lista_postaci)):
                 if self.lista_postaci[pse] == postac:
                     self.lista_postaci[pse] = nazwa
-                    app.changeOptionBox("Lista postaci : ", self.lista_postaci)
+                    app.changeAutoEntry("Lista postaci : ", self.lista_postaci)
             self.database.cursor().execute("commit")
             app.infoBox("Zmień dane", "Dane wskazanej postaci zostały poprawnie zmienione", parent=None)
         except Exception as e:
             self.obslugaBledow(e)
+        app.setEntry("Lista postaci : ", "")
+        app.setEntry("Nazwa :", "")
+        app.setOptionBox("Level Postaci :", None)
+        app.setOptionBox("Płeć :", None)
+
+        app.setOptionBox("Rasa :", None)
+        app.setOptionBox("Kraj :", None)
+        app.setOptionBox("Klasa :", None)
+
+        app.setEntry("Wiek :", "")
+        app.setEntry("Wzrost :", "")
+        app.setEntry("Waga :", "")
+
+        app.setEntry("Kolor skóry :", "")
+        app.setEntry("Kolor włosów :", "")
+        app.setEntry("Kolor oczu :", "")
+
+
+        app.setEntry("HP :", "")
+
+        app.setEntry("STA :", "")
+
+        app.setOptionBox("STR :", None)
+        app.setOptionBox("DEX :", None)
+        app.setOptionBox("CON :", None)
+        app.setOptionBox("INT :", None)
+        app.setOptionBox("WIS :", None)
+        app.setOptionBox("CHA :", None)
 
     def loadRaceData(self):
         if self.database is not None and self.canLoadRace == 1:
@@ -588,10 +770,13 @@ class window():
             app.infoBox("Zmień dane", "Dane wskazanego kraju zostały poprawnie zmienione", parent=None)
         except Exception as e:
             self.obslugaBledow(e)
+        app.setEntry("Stolica :", "")
+        app.setOptionBox("Strona konfliktu :", None)
+        app.setOptionBox("Język urzędowy :", None)
 
     def editRasy(self):
         rasa = app.getOptionBox("Lista ras : ")
-        opis = app.getTextArea("Opis rasy :")
+        opis = (app.getTextArea("Opis rasy :")).replace("'", "`")
         srd = app.getEntry("Długość życia :")
         pd = app.getOptionBox("Pod / Dod :")
         dod = app.getEntry("Dodatek :")
@@ -605,6 +790,14 @@ class window():
             app.infoBox("Zmień dane", "Dane wskazanej rasy zostały poprawnie zmienione", parent=None)
         except Exception as e:
             self.obslugaBledow(e)
+        app.clearTextArea("Opis rasy :", callFunction=True)
+        app.setEntry("Długość życia :", "")
+        app.setOptionBox("Pod / Dod :", None)
+        app.setEntry("Dodatek :", "")
+        app.setOptionBox("Efekt rasy :", None)
+        app.setOptionBox("Nazwa języka :", None)
+
+
 
     def createTableOfAbilities(self):
         self.iterator += 1
@@ -794,7 +987,7 @@ class window():
             app.setPadding([20, 5])
             app.addLabel("~~Nowa umiejętność~~", "~~Nowa umiejętność~~", 1, 0, colspan=2)
             app.addLabelEntry("Nazwa umiej.", 2, 0)
-            app.addLabelEntry("Poziom umiej.", 2, 1)
+            app.addLabelOptionBox("Poziom umiej.", self.lista_stat, 2, 1)
             app.addLabel("Opis umiejetnosci :", "Opis umiejętności", 3, 0)
             app.setSticky("wne")
             #app.addEntry("Dupa", 3, 2, rowspan=2)
@@ -808,11 +1001,13 @@ class window():
             lista_klas = win.lista_class
             if "---------" not in lista_klas:
                 lista_klas.insert(0, "---------")
-            app.addLabelOptionBox("Klasa 1st", lista_klas, 7, 0)
-            app.addLabelOptionBox("Klasa 2nd", lista_klas, 7, 1)
-            app.addLabelOptionBox("Klasa 3rd", lista_klas, 7, 2)
-            app.addLabelOptionBox("Klasa 4th", lista_klas, 8, 0)
-            app.addLabelOptionBox("Klasa 5th", lista_klas, 8, 1)
+            app.addLabelOptionBox("1st", lista_klas, 7, 0)
+            app.addLabelOptionBox("2nd", lista_klas, 7, 1)
+            app.setSticky("we")
+            app.addLabelOptionBox("3rd", lista_klas, 7, 2)
+            app.setSticky("w")
+            app.addLabelOptionBox("4th", lista_klas, 8, 0)
+            app.addLabelOptionBox("5th", lista_klas, 8, 1)
             app.addButtons(["OK"], win.sendSpell, 8, 2)
             app.setPadding([0, 0])
             app.setSticky("nes")
@@ -890,7 +1085,7 @@ class window():
             umiejDB = self.database.cursor().execute(query)
             for row in umiejDB:
                 tmp = []
-                self.lista_class.append(row[0])
+                #self.lista_class.append(row[0])
                 for item in row:
                     if item == None:
                         item = '-'
@@ -1017,7 +1212,7 @@ class window():
                 self.database.cursor().execute(f"delete from inf141249.postacie where nazwa_postaci = '{user}'")
                 self.database.cursor().execute("commit")
                 self.lista_postaci.remove(user)
-                app.changeOptionBox("Lista postaci : ", self.lista_postaci)
+                app.changeAutoEntry("Lista postaci : ", self.lista_postaci)
                 app.infoBox("Usunięto kartę postaci", f"Poprawnie usunięto kartę postaci: {user}", parent=None)
             except Exception as e:
                 print(e)
@@ -1160,7 +1355,6 @@ class window():
                 self.database.cursor().execute(f"delete from inf141249.klasy where nazwa = '{klasa}'")
                 self.database.cursor().execute("commit")
                 self.lista_class.remove(klasa)
-                print(self.lista_class)
                 app.changeOptionBox("Wybierz klasę", self.lista_class)
                 app.changeOptionBox("Klasa :", self.lista_class)
 
@@ -1177,7 +1371,6 @@ class window():
                 app.replaceAllTableRows("tabela_klas", klasy, deleteHeader=True)
                 app.infoBox("Usunięto klasę", f"Poprawnie usunięto klasę: {klasa} z bazy danych", parent=None)
             except Exception as e:
-                print(e)
                 self.obslugaBledow(e)
 
     def usunUmiejetnosc(self):
@@ -1202,9 +1395,7 @@ class window():
                 tmp = []
                 for item in row:
                     tmp.append(item)
-                a = tmp[0].replace('\n', '')
-                if a[-1] == " ":
-                    a = a[:len(a) - 1]
+                a = tmp[0]
                 if a not in umiej:
                     umiej.append(a)
 
@@ -1219,20 +1410,116 @@ class window():
 
 
     def delUmiejetnosc(self, button):
-        umiej = app.getOptionBox("Wybierz umiejętność :")
+        umiejet = app.getOptionBox("Wybierz umiejętność :")
         if button == "=Cancel=":
             app.destroySubWindow('Usuwanie umiejętności')
         else:
             app.destroySubWindow('Usuwanie umiejętności')
             try:
                 self.database.cursor().execute(f"delete from inf141249.umiejetnoscidlaklas where "
-                                               f" umiejetnosc = '{umiej}'")
-                self.database.cursor().execute(f"delete from inf141249.umiejetnosci where nazwa = '{umiej}'")
-                #self.database.cursor().execute("commit")
-                app.infoBox("Usunięto umiejętność", f"Poprawnie usunięto umiejętność: {umiej} z bazy danych", parent=None)
+                                               f" umiejetnosc = '{umiejet}'")
+                self.database.cursor().execute(f"delete from inf141249.umiejetnosci where nazwa = '{umiejet}'")
+                self.database.cursor().execute("commit")
+                umiej = []
+                umiej = ["----------"]
+                klasyDB = self.database.cursor().execute(f"select distinct(nazwa) from inf141249.umiejetnosci")
+                for row in klasyDB:
+                    tmp = []
+                    for item in row:
+                        tmp.append(item)
+                    a = tmp[0]
+                    if a not in umiej:
+                        umiej.append(a)
+                self.lista_czarow = umiej
+                if len(self.lista_czarow) == 0:
+                    self.lista_czarow.append("--------")
+                app.changeAutoEntry("Umiej.:", self.lista_czarow)
+                app.infoBox("Usunięto umiejętność", f"Poprawnie usunięto umiejętność: {umiejet} z bazy danych", parent=None)
             except Exception as e:
                 print(e)
                 self.obslugaBledow(e)
+    '''
+    def modyfikujUmiejetnosc(self):
+        try:
+            app.destroySubWindow("Modyfikuj umiejętności")
+        except:
+            pass
+        with app.subWindow('Modyfikuj umiejętności', modal=True):
+            app.emptyCurrentContainer()
+            app.setResizable(canResize=False)
+            app.showSubWindow('Modyfikuj umiejętności')
+            app.setBg("indianred")
+            app.setSize(400, 200)
+            app.setSticky("new")
+            app.addImage("smogAAVVAVAAA", "goraLogin.gif")
+
+            umiej = []
+            klasyDB = self.database.cursor().execute(f"select distinct(nazwa) from inf141249.umiejetnosci")
+            for row in klasyDB:
+                tmp = []
+                for item in row:
+                    tmp.append(item)
+                a = tmp[0].replace('\n', '')
+                if a[-1] == " ":
+                    a = a[:len(a) - 1]
+                if a not in umiej:
+                    umiej.append(a)
+
+            app.setPadding([20, 5])
+            app.addLabelOptionBox("Wybierz umiejętność : ", umiej)
+
+            app.addButtons(["_Choose_", "_Cancel_"], self.modUmiej)
+
+            app.setPadding([0, 0])
+            app.setSticky("sew")
+            app.addImage("smogBVVVBBBBB", "dolLogin.gif")
+
+    def modUmiej(self, button):
+        try:
+            app.destroySubWindow("Modyfikuj umiejętności")
+        except:
+            pass
+        umiej = app.getOptionBox("Wybierz umiejętność : ")
+        if button == "_Cancel_":
+            app.destroySubWindow('Modyfikuj umiejętności')
+        else:
+            app.destroySubWindow('Modyfikuj umiejętności')
+
+        with app.subWindow("Modyfikuj nową umiejętność", modal=True):
+            app.showSubWindow("Modyfikuj nową umiejętność")
+            app.emptyCurrentContainer()
+            app.setResizable(canResize=False)
+            app.setSize(1300, 720)
+            app.setBg(colour="beige", override=False)
+            app.setStretch("column")
+            app.setSticky("new")
+            app.addImage(f"modumiejtlo{self.iterator}", "dnd2.gif", colspan=5)
+            app.setSticky("w")
+            app.setPadding([20, 5])
+            app.addLabel("~~Modyfikuj umiejętność~~", "~~Modyfikuj umiejętność~~", 1, 0, colspan=2)
+            app.addLabelEntry("Nazwa umiej. :", 2, 0)
+            app.addLabelEntry("Poziom umiej. :", 2, 1)
+            app.addLabel("Opis umiejetnosci : ", "Opis umiejętności", 3, 0)
+            app.setSticky("wne")
+            app.addTextArea("opis_umiej1", 4, 0, colspan=4)
+            app.setSticky("w")
+            app.addLabelOptionBox("DMG ", win.lista_war_umiej, 5, 0)
+            app.addLabelOptionBox("HEAL ", win.lista_war_umiej, 5, 1)
+            app.addLabelOptionBox("DEF ", win.lista_war_umiej, 5, 2)
+            app.addLabelOptionBox("P_D ", win.pod_dod, 6, 0)
+            app.addLabelEntry("Dodatek ", 6, 1)
+            lista_klas = win.lista_class
+            if "---------" not in lista_klas:
+                lista_klas.insert(0, "---------")
+            app.addLabelOptionBox("Klasa 1st ", lista_klas, 7, 0)
+            app.addLabelOptionBox("Klasa 2nd ", lista_klas, 7, 1)
+            app.addLabelOptionBox("Klasa 3rd ", lista_klas, 7, 2)
+            app.addLabelOptionBox("Klasa 4th ", lista_klas, 8, 0)
+            app.addLabelOptionBox("Klasa 5th ", lista_klas, 8, 1)
+            app.addButtons([" OK "], win.doNothing, 8, 2)
+            app.setPadding([0, 0])
+            app.setSticky("nes")
+            app.addImage(f"krolModUmiej{self.iterator}", "krol.gif", 1, 3, rowspan=50)'''
 
 
 
@@ -1263,6 +1550,7 @@ if __name__ == "__main__":
         app.disableMenuItem("Umiejętności", "Nowa umiejętność")
         app.disableMenuItem("Umiejętności", "Dostępne umiejętności")
         app.disableMenuItem("Umiejętności", "Usuń umiejętność")
+        #app.disableMenuItem("Umiejętności", "Modyfikuj umiejętność")
         app.disableMenuItem("Użytkownicy", "Dodaj użytkownika")
         app.disableMenuItem("Użytkownicy", "Usuń użytkownika")
         app.startTabbedFrame("Start")
@@ -1282,7 +1570,7 @@ if __name__ == "__main__":
         app.setStretch('column')
         app.setSticky("we")
         app.setPadding([20, 0])
-        app.addLabelOptionBox("Lista postaci : ", win.lista_postaci, 2, 0, colspan=2)
+        app.addLabelAutoEntry("Lista postaci : ", win.lista_postaci, 2, 0, colspan=2)
         app.addLabel("pustaGlowna1", "", 2, 2)
         app.setSticky("w")
         app.addButtons(["Edytuj Postać"], win.loadCharacterData, 2, 2)
@@ -1462,9 +1750,60 @@ if __name__ == "__main__":
         app.addLabel('bottom5', '', 1, colspan=3)
         app.setLabelBg("bottom5", "darkred")
 
+
+        # TAG 6---------------------------------------------------------------------------------------------------------
+
+        app.startTab(win.lista_tab[5])
+        app.setStretch("column")
+        app.setSticky("new")
+        app.addImage("tlo6", "dnd2.gif", colspan=4)
+        app.setBg(colour="beige", override=False)
+        app.setStretch('column')
+        app.setSticky('wen')
+        app.addLabel('bottom6', '', 1, colspan=4)
+        app.setLabelBg("bottom6", "darkred")
+        app.setPadding([20, 5])
+        app.setSticky('w')
+        app.addLabel("~~Modyfikuj umiejętność~~", "~~Modyfikuj umiejętność~~", 2, 0, colspan=2)
+        app.setSticky('we')
+        app.addLabelAutoEntry("Umiej.:", win.lista_czarow, 3, 0, colspan=2)
+
+        app.addButtons([" Edytuj umiejętność"], win.loadUmiejData, 3, 2)
+        app.setSticky("w")
+        app.addLabel("Opis umiejetnosci : ", "Opis umiejętności", 4, 0)
+        app.setSticky("wne")
+        app.addTextArea("opis_umiej1", 5, 0, colspan=4)
+        app.setSticky("w")
+        app.addLabelOptionBox("DMG ", win.lista_war_umiej, 6, 0)
+        app.addLabelOptionBox("HEAL ", win.lista_war_umiej, 6, 1)
+        app.addLabelOptionBox("DEF ", win.lista_war_umiej, 6, 2)
+        app.addLabelOptionBox("P_D ", win.pod_dod, 7, 1)
+        app.addLabelEntry("Dodatek ", 7, 2)
+        app.addLabelOptionBox("Poziom :", win.lista_stat, 7, 0)
+        app.setSticky("w")
+        app.addLabelOptionBox("1st ", win.lista_class, 8, 0)
+        app.addLabelOptionBox("2nd ", win.lista_class, 8, 1)
+        app.addLabelOptionBox("3rd ", win.lista_class, 8, 2)
+        app.addLabelOptionBox("4th ", win.lista_class, 9, 0)
+        app.addLabelOptionBox("5th ", win.lista_class, 9, 1)
+        app.addButtons([" Zmień Dane"], win.editUmiejData, 9, 2)
+        app.setPadding([0, 0])
+        app.setSticky("nes")
+        app.addImage(f"kroltag6", "krol.gif", 2, 3, rowspan=30)
+
+        app.registerEvent(win.createTableOfSpells)
+
+        #---
+
+
         app.stopTab()
         app.stopTabbedFrame()
 
         app.setTabbedFrameBg("Start", "darkred")
 
         app.setTabbedFrameDisableAllTabs("Start", disabled=True)
+
+
+'''lista_klas = win.lista_class
+        if "---------" not in lista_klas:
+            lista_klas.insert(0, "---------")'''
