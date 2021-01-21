@@ -1,12 +1,7 @@
 from databaseConnection import connection
 from appJar import gui
-from PIL import Image, ImageTk
-import datetime
-
 
 class window():
-
-
 
     def __init__(self):
         self.aktualnaKlasa = None
@@ -61,6 +56,11 @@ class window():
             app.infoBox("Problem z połączeniem",
                         "Przekroczono czas logowania do bazy danych. Sprawdź połączenie internetowe"
                         " lub skonfiguruj ustawienia VPN.", parent=None)
+            return -1
+        if str(tekst).find("ORA-02290") > -1:
+            app.infoBox("Błąd modyfikacji", "Próba modyfikacji elementu, na które zostało nałożone ograniczenie. "
+                                            "Dla pól liczbowych spróbuj podać inną wartość. Np.: dla pola 'WIEK'"
+                                            " wartość > 0.", parent=None)
             return -1
         if str(tekst).find("ORA-02292") > -1:
             app.infoBox("Błąd usuwania", "Próba usunięcia elementu, do którego odwołuje się inny element. Wskazany element"
@@ -184,9 +184,10 @@ class window():
             app.infoBox("Nowa Postać   ", "Nastąpiło poprawne dodanie postaci do bazy danych", parent=None)
             self.lista_postaci.append(nazwa)
             app.changeAutoEntry("Lista postaci : ", self.lista_postaci)
+            app.destroySubWindow("Dodaj nową postać")
         except Exception as e:
             self.obslugaBledow(e)
-        app.destroySubWindow("Dodaj nową postać")
+
 
     def sendRace(self):
         nazwa = app.getEntry("Nazwa rasy")
@@ -217,9 +218,10 @@ class window():
                 app.changeOptionBox("Rasa :", self.lista_races)
                 app.changeOptionBox("Lista ras : ", self.lista_races)
                 app.addTableRows("tabela_pochodzeń1", [[nazwa, opis, srd, pd, dodatek, jezyk, efekt_lista1[0], efekt_lista1[1], efekt_lista1[2], efekt_lista1[3]]])
+                app.destroySubWindow("Dodaj nową rasę")
             except Exception as e:
                 self.obslugaBledow(e)
-            app.destroySubWindow("Dodaj nową rasę")
+
 
 
     def sendNation(self):
@@ -237,9 +239,10 @@ class window():
             app.changeOptionBox("Lista Krajów pochodzenia : ", self.lista_krajow)
             app.openTab("Start", self.lista_tab[4])
             app.addTableRows("tabela_pochodzeń", [[kraj, stolica, jezyk, strona]])
+            app.destroySubWindow("Dodaj nowy kraj pochodzenia")
         except Exception as e:
             self.obslugaBledow(e)
-        app.destroySubWindow("Dodaj nowy kraj pochodzenia")
+
 
     def sendClass(self):
         klasa = app.getEntry("Nazwa klasy")
@@ -254,9 +257,10 @@ class window():
             app.changeOptionBox("Klasa :", self.lista_class)
             app.openTab("Start", self.lista_tab[1])
             app.addTableRows("tabela_klas", [[klasa, opis]])
+            app.destroySubWindow("Dodaj nową klasę")
         except Exception as e:
             self.obslugaBledow(e)
-        app.destroySubWindow("Dodaj nową klasę")
+
 
     def sendEffect(self):
         nazwa = app.getEntry("Nazwa efektu :")
@@ -270,12 +274,13 @@ class window():
             app.infoBox("Nowa Rasa  ", "Nastąpiło poprawne dodanie efektu do bazy danych", parent=None)
             self.lista_efektow.append(nazwa)
             app.changeOptionBox("Efekt rasy :", self.lista_efektow)
+            app.setEntry("Nazwa efektu :", "")
+            app.clearTextArea("Opis efektu :", callFunction=True)
+            app.setOptionBox("Stat :", None)
+            app.setOptionBox("Wartość :", None)
         except Exception as e:
             self.obslugaBledow(e)
-        app.setEntry("Nazwa efektu :", "")
-        app.clearTextArea("Opis efektu :", callFunction=True)
-        app.setOptionBox("Stat :", None)
-        app.setOptionBox("Wartość :", None)
+
 
     def sendJezyk(self):
         nazwa = app.getEntry("Nazwa nowego języka :")
@@ -287,9 +292,10 @@ class window():
             self.lista_jezykow.append(nazwa)
             app.changeOptionBox("Nazwa języka :", self.lista_jezykow)
             app.changeOptionBox("Język urzędowy :", self.lista_jezykow)
+            app.setEntry("Nazwa nowego języka :", "")
         except Exception as e:
             self.obslugaBledow(e)
-        app.setEntry("Nazwa nowego języka :", "")
+
 
     def sendSpell(self):
         if "---------" in self.lista_class:
@@ -340,11 +346,12 @@ class window():
                     self.lista_czarow.append(nazwa)
                     app.changeAutoEntry("Umiej.:", self.lista_czarow)
                     app.infoBox("Nowa umiejętność", "Nastąpiło poprawne dodanie umiejętności do bazy danych.", parent=None)
+                    app.destroySubWindow("Dodaj nową umiejętność")
                 except Exception as e:
                     self.obslugaBledow(e)
             else:
                 app.infoBox("Błąd", "Próba dodania umiejętności nie przypisanej do żadnej klasy.", parent=None)
-            app.destroySubWindow("Dodaj nową umiejętność")
+
 
     def doNothing(self):
         pass
@@ -691,22 +698,23 @@ class window():
                         f"where nazwa = '{nazwa}'")
                     self.database.cursor().execute("commit")
                     app.infoBox("Zmień dane", "Dane wskazanej umiejętności zostały poprawnie zmienione", parent=None)
+                    app.setEntry("Umiej.:", "")
+                    app.setOptionBox("Poziom :", None)
+                    app.clearTextArea("opis_umiej1", callFunction=True)
+                    app.setOptionBox("DMG ", None)
+                    app.setOptionBox("HEAL ", None)
+                    app.setOptionBox("DEF ", None)
+                    app.setOptionBox("P_D ", None)
+                    app.setEntry("Dodatek ", "")
+                    klasyLista = ["1st ", "2nd ", "3rd ", "4th ", "5th "]
+                    for i in range(5):
+                        app.setOptionBox(klasyLista[i], "~~~~~~~~")
                 except Exception as e:
                     self.obslugaBledow(e)
             else:
                 app.infoBox("Błąd", "Próba dodania umiejętności nie przypisanej do żadnej klasy "
                                     "lub edycji nieistniejącej umiejętności.", parent=None)
-            app.setEntry("Umiej.:", "")
-            app.setOptionBox("Poziom :", None)
-            app.clearTextArea("opis_umiej1", callFunction=True)
-            app.setOptionBox("DMG ", None)
-            app.setOptionBox("HEAL ", None)
-            app.setOptionBox("DEF ", None)
-            app.setOptionBox("P_D ", None)
-            app.setEntry("Dodatek ", "")
-            klasyLista = ["1st ", "2nd ", "3rd ", "4th ", "5th "]
-            for i in range(5):
-                app.setOptionBox(klasyLista[i], "~~~~~~~~")
+
 
     def loadCharacterData(self):
         if self.database is not None and self.canLoad == 1:
@@ -799,36 +807,36 @@ class window():
                     app.changeAutoEntry("Lista postaci : ", self.lista_postaci)
             self.database.cursor().execute("commit")
             app.infoBox("Zmień dane", "Dane wskazanej postaci zostały poprawnie zmienione", parent=None)
+            app.setEntry("Lista postaci : ", "")
+            app.setEntry("Nazwa :", "")
+            app.setOptionBox("Level Postaci :", None)
+            app.setOptionBox("Płeć :", None)
+
+            app.setOptionBox("Rasa :", None)
+            app.setOptionBox("Kraj :", None)
+            app.setOptionBox("Klasa :", None)
+
+            app.setEntry("Wiek :", "")
+            app.setEntry("Wzrost :", "")
+            app.setEntry("Waga :", "")
+
+            app.setEntry("Kolor skóry :", "")
+            app.setEntry("Kolor włosów :", "")
+            app.setEntry("Kolor oczu :", "")
+
+            app.setEntry("HP :", "")
+
+            app.setEntry("STA :", "")
+
+            app.setOptionBox("STR :", None)
+            app.setOptionBox("DEX :", None)
+            app.setOptionBox("CON :", None)
+            app.setOptionBox("INT :", None)
+            app.setOptionBox("WIS :", None)
+            app.setOptionBox("CHA :", None)
         except Exception as e:
             self.obslugaBledow(e)
-        app.setEntry("Lista postaci : ", "")
-        app.setEntry("Nazwa :", "")
-        app.setOptionBox("Level Postaci :", None)
-        app.setOptionBox("Płeć :", None)
 
-        app.setOptionBox("Rasa :", None)
-        app.setOptionBox("Kraj :", None)
-        app.setOptionBox("Klasa :", None)
-
-        app.setEntry("Wiek :", "")
-        app.setEntry("Wzrost :", "")
-        app.setEntry("Waga :", "")
-
-        app.setEntry("Kolor skóry :", "")
-        app.setEntry("Kolor włosów :", "")
-        app.setEntry("Kolor oczu :", "")
-
-
-        app.setEntry("HP :", "")
-
-        app.setEntry("STA :", "")
-
-        app.setOptionBox("STR :", None)
-        app.setOptionBox("DEX :", None)
-        app.setOptionBox("CON :", None)
-        app.setOptionBox("INT :", None)
-        app.setOptionBox("WIS :", None)
-        app.setOptionBox("CHA :", None)
 
     def loadRaceData(self):
         if self.database is not None and self.canLoadRace == 1:
@@ -867,11 +875,12 @@ class window():
                 f"update inf141249.kraje_pochodzenia set nazwa = '{kraj}', stolica = '{stolica}', jezyk_urzedowy = '{jezyk}', nazwa_strony = '{strona}' where nazwa = '{kraj}'")
             self.database.cursor().execute("commit")
             app.infoBox("Zmień dane", "Dane wskazanego kraju zostały poprawnie zmienione", parent=None)
+            app.setEntry("Stolica :", "")
+            app.setOptionBox("Strona konfliktu :", None)
+            app.setOptionBox("Język urzędowy :", None)
         except Exception as e:
             self.obslugaBledow(e)
-        app.setEntry("Stolica :", "")
-        app.setOptionBox("Strona konfliktu :", None)
-        app.setOptionBox("Język urzędowy :", None)
+
 
     def editRasy(self):
         rasa = app.getOptionBox("Lista ras : ")
@@ -892,14 +901,15 @@ class window():
                     f"nazwa_efektu = '{efekt}', nazwa_jezyka = '{jezyk}' where nazwa = '{rasa}'")
                 self.database.cursor().execute("commit")
                 app.infoBox("Zmień dane", "Dane wskazanej rasy zostały poprawnie zmienione", parent=None)
+                app.clearTextArea("Opis rasy :", callFunction=True)
+                app.setEntry("Długość życia :", "")
+                app.setOptionBox("Pod / Dod :", None)
+                app.setEntry("Dodatek :", "")
+                app.setOptionBox("Efekt rasy :", None)
+                app.setOptionBox("Nazwa języka :", None)
             except Exception as e:
                 self.obslugaBledow(e)
-            app.clearTextArea("Opis rasy :", callFunction=True)
-            app.setEntry("Długość życia :", "")
-            app.setOptionBox("Pod / Dod :", None)
-            app.setEntry("Dodatek :", "")
-            app.setOptionBox("Efekt rasy :", None)
-            app.setOptionBox("Nazwa języka :", None)
+
 
 
 
@@ -942,7 +952,7 @@ class window():
                 app.setSticky("news")
                 app.setPadding([20, 20])
                 app.addTable(f"tabela_umiejetnosci_dla_klas{self.iterator}", umiejLista, wrap="500")
-                app.addLabel("puste, psu", "", 3, 0, colspan=3)
+                #app.addLabel("puste, psu", "", 3, 0, colspan=3)
 
     def createNewCharacterWindow(self):
         self.iterator += 1
@@ -1209,7 +1219,7 @@ class window():
                 app.addLabel(f"~~Lista umiejętności postaci {self.iterator}", f"~~Lista umiejętności postaci: {cur_character}~~", 1, 0, colspan=2)
                 app.setSticky("news")
                 app.setPadding([20, 20])
-                app.addTable(f"tabela_umiejetnosci_dla_klas {self.iterator}", umiejLista, wrap="500")
+                app.addTable(f"tabela_umiejetnosci_dla_klas {self.iterator}", umiejLista, wrap="500", row=2, rowspan=2)
 
     def newUser(self):
         try:
